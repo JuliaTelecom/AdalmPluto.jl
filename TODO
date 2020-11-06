@@ -1,0 +1,17 @@
+src/Tmp.jl:48:# TODO: macro/function to print errors
+src/Tmp.jl:222:# TODO: cleaner warning printing
+src/Tmp.jl:377:    # TODO: find out if it's needed or those values are constants
+src/Tmp.jl:387:    # TODO: clean previous lines (always same data type ?)
+src/Tmp.jl:388:    # TODO: check byte ordering
+src/libIIO/libIIO.jl:11:# TODO: make it possible to provide buffers / variables
+src/libIIO/libIIO.jl:12:# TODO: convert C numeric types to julia types
+src/libIIO/libIIO.jl:14:# TODO: move this to __init__ ?
+src/libIIO/device.jl:311:# TODO: check if julia args are refs or copies ?
+src/libIIO/structures.jl:34:# TODO : find a clean way to make it only one macro
+src/libIIO/channel.jl:166:# TODO: check return value
+src/libIIO/channel.jl:184:# TODO: check return value
+src/libIIO/channel.jl:217:# TODO: find out how the data format works (iio_channel_get_data_format)
+src/libIIO/channel.jl:230:# TODO
+src/libIIO/toplevel.jl:25:# TODO: cleaner string conversion ? String(Char.) returns a string with \0 included
+src/libIIO/context.jl:27:# TODO: TEST
+src/libIIO/context.jl:88:# TODO: TEST

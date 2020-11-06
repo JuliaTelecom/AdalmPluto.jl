@@ -1,0 +1,8 @@
+[libIIO]
+arch = "x86_64"
+os = "linux"
+git-tree-sha1 = "57107d8113c5c2da267b08552f48de32de6d64ba"
+
+    [[libIIO.download]]
+    url = "https://github.com/ledoune/libiio/releases/download/v0.21/libiio-0.21-custom.tar.gz"
+    sha256 = "7b4107657262b72e7d4a749a924dee906fb42be64f4aa117c70fefd4945b2001"
