@@ -1,84 +1,52 @@
+# --- All libIIO functions wrapped --- #
+
 module PlutoSDR
 
-using Pkg.Artifacts;
+using Reexport;
 
-# init globals and lib path
-const libIIO_rootpath = artifact"libIIO";
-const libIIO = joinpath(libIIO_rootpath, "libiio.so");
-# needed for libIIO functions, maybe move them ?
-const BUF_SIZE = 16384; # same value as iio_common.h
-const C_INT_MAX = 2^31 - 1;
-NO_ASSERT = false;
-
-# adds a udev rule needed for usb devices
-# should be a volatile rule and will need to be added each boot
-# but it makes it possible to delete the artifact without leftovers
-function __init__()
-    if !isfile("/run/udev/rules.d/90-libiio.rules")
-        println("Could not find the necessary udev rule.\nAdding it to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
-        rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
-        open("/tmp/90-libiio.rules", "w") do f
-            write(f, rule);
-        end
-        run(`sudo mkdir -p /run/udev/rules.d`);
-        run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
-    end
-end
-
-# --- All libIIO functions wrapped --- #
 include("libIIO/libIIO.jl");
+@reexport using .libIIO_jl;
 
-# --- Pretty printing functions --- #
+# --- Functions taken from libad9361 --- #
+include("libad9361.jl");
+# --- utils --- #
+include("utils.jl");
 
-# To print fancy message with different colors with Tx and Rx
-function customPrint(str, handler;style...)
-	msglines = split(chomp(str), '\n');
-	printstyled("┌", handler, ": ";style...);
-	println(msglines[1]);
-	for i in 2:length(msglines)
-		(i == length(msglines)) ? symb = "└ " : symb = "|";
-		printstyled(symb;style...);
-		println(msglines[i]);
-	end
+# --- struct exports --- #
+export
+    ChannelCfg,
+    Pluto
+;
+
+# --- functions exports --- #
+export
+    open,
+    close,
+    recv,
+    recv!,
+    updateRXGain!,
+    updateRXGainMode!
+;
+
+# constants
+const TX_DEVICE_NAME  = "cf-ad9361-dds-core-lpc";
+const RX_DEVICE_NAME  = "cf-ad9361-lpc";
+const PHY_DEVICE_NAME = "ad9361-phy";
+
+@enum GainMode begin
+    MANUAL
+    FAST_ATTACK
+    SLOW_ATTACK
+    HYBRID
+    DEFAULT
 end
-
-# define macro for printing Rx info
-macro inforx(str)
-	quote
-		customPrint($(esc(str)), "Rx";bold=true,color=:light_green)
-	end
-end
-
-# define macro for printing Rx warning
-macro warnrx(str)
-	quote
-		customPrint($(esc(str)), "Rx Warning";bold=true,color=:light_yellow)
-	end
-end
-
-# define macro for printing Tx info
-macro infotx(str)
-	quote
-		customPrint($(esc(str)), "Tx";bold=true,color=:light_blue)
-	end
-end
-
-# define macro for printing Tx warning
-macro warntx(str)
-	quote
-		customPrint($(esc(str)), "Tx Warning";bold=true,color=:light_yellow)
-	end
-end
-
-# TODO: macro/function to print errors
-
 
 # ------------------ #
 # --- Structures --- #
 # ------------------ #
 
 # --- TRx structure --- #
-mutable struct streamCfg
+mutable struct ChannelCfg
     rfport::String;
     bandwidth::Int64;
     samplingRate::Int64;
@@ -105,7 +73,7 @@ end
 
 mutable struct PlutoRx
     iio::rxWrapper;
-    cfg::streamCfg;
+    cfg::ChannelCfg;
     buf::IIO_Buffer;
     effectiveSamplingRate::Float64;
     effectiveCarrierFreq::Float64;
@@ -123,7 +91,7 @@ end
 
 mutable struct PlutoTx
     iio::txWrapper;
-    cfg::streamCfg;
+    cfg::ChannelCfg;
     buf::IIO_Buffer;
     effectiveSamplingRate::Float64;
     effectiveCarrierFreq::Float64;
@@ -131,6 +99,76 @@ mutable struct PlutoTx
 end
 
 # --- final wrap --- #
+"""
+    Pluto
+
+Layout :
+
+Pluto
++-- ctx::Ptr{iio_context}
+|
++-- tx::PlutoTx
+|   |
+|   +-- iio::txWrapper
+|   |   |
+|   |   +-- tx::Ptr{iio_device};
+|   |   +-- tx0_i::Ptr{iio_channel};
+|   |   +-- tx0_q::Ptr{iio_channel};
+|   |   +-- chn::Ptr{iio_channel};
+|   |   +-- chn_lo::Ptr{iio_channel};
+|   |
+|   +-- cfg::ChannelCfg
+|   |   |
+|   |   +-- rfport::String;
+|   |   +-- bandwidth::Int64;
+|   |   +-- samplingRate::Int64;
+|   |   +-- carrierFreq::Int64;
+|   |
+|   +-- buf::IIO_Buffer
+|   |   |
+|   |   +-- ptr::Ptr{iio_buffer};
+|   |   +-- size::Csize_t;
+|   |   +-- sample_size::Cssize_t;
+|   |   +-- first::Ptr{Cuchar};
+|   |   +-- last::Ptr{Cuchar};
+|   |   +-- step::Cssize_t;
+|   |
+|   +-- effectiveSamplingRate::Float64
+|   +-- effectiveCarrierFreq::Float64
+|   +-- released::Bool
+|
++-- rx::PlutoRx
+|   |
+|   +-- iio::rxWrapper
+|   |   +-- rx::Ptr{iio_device};
+|   |   +-- rx0_i::Ptr{iio_channel};
+|   |   +-- rx0_q::Ptr{iio_channel};
+|   |   +-- chn::Ptr{iio_channel};
+|   |   +-- chn_lo::Ptr{iio_channel};
+|   |
+|   +-- cfg::ChannelCfg
+|   |   |
+|   |   +-- rfport::String;
+|   |   +-- bandwidth::Int64;
+|   |   +-- samplingRate::Int64;
+|   |   +-- carrierFreq::Int64;
+|   |
+|   +-- buf::IIO_Buffer
+|   |   |
+|   |   +-- ptr::Ptr{iio_buffer};
+|   |   +-- size::Csize_t;
+|   |   +-- sample_size::Cssize_t;
+|   |   +-- first::Ptr{Cuchar};
+|   |   +-- last::Ptr{Cuchar};
+|   |   +-- step::Cssize_t;
+|   |
+|   +-- effectiveSamplingRate::Float64
+|   +-- effectiveCarrierFreq::Float64
+|   +-- released::Bool
+|
++-- released::Bool
+
+"""
 mutable struct Pluto
     ctx::Ptr{iio_context};
     tx::PlutoTx;
@@ -141,11 +179,20 @@ end
 # ------------------------ #
 # --- Helper functions --- #
 # ------------------------ #
-#=
-Corresponding doc/example
+"""
+    scan(backend[, infoIndex, doPrint])
+
+Returns a device uri.
+
+# Arguments
+- `backend::String` : the backend to scan (local, xml, ip, usb).
+- `infoIndex::Integer=1` : the device index.
+- `doPrint::Bool=true` : toggles console printing of the uri.
+
+# C equivalent
 https://analogdevicesinc.github.io/libiio/master/libiio/iio-monitor_8c-example.html#_a15
-=#
-function scan(backend::String, infoIndex=1, doPrint=true)
+"""
+function scan(backend::String, deviceIndex=1, doPrint=true)
     # Check if backend is available and create scan context
     C_iio_has_backend(backend) || error("Specified backend $backend is not available");
     scan_context = C_iio_create_scan_context(backend);
@@ -163,7 +210,7 @@ function scan(backend::String, infoIndex=1, doPrint=true)
     elseif ret == 0
         (doPrint) && (@info "No $backend device found");
     else
-        loaded_info = unsafe_load(info[], infoIndex);
+        loaded_info = unsafe_load(info[], deviceIndex);
         description = C_iio_context_info_get_description(loaded_info);
         uri = C_iio_context_info_get_uri(loaded_info);
         (doPrint) && (@info "Found $ret device(s) with $backend backend.\nSelected $description [$uri]");
@@ -177,54 +224,105 @@ end
 
 # Returns a Ptr{iio_context} from the given URI
 # Throws an error if there are no devices in this context
+"""
+    getContext(uri)
+
+Returns the `iio_context` corresponding the the provided uri. Throws an error if no devices are found in the context.
+"""
 function getContext(uri::String)
     context = C_iio_create_context_from_uri(uri);
     if(C_iio_context_get_devices_count(context) == 0) error("No device found in context from uri $uri"); end
     return context;
 end
 
-# Returns a Ptr{iio_device} to the pluto TX device.
-function getTXStreamingDevice(context::Ptr{iio_context})
-    return C_iio_context_find_device(context, "cf-ad9361-dds-core-lpc");
-end
 
-# Returns a Ptr{iio_device} to the pluto RX device.
-function getRXStreamingDevice(context::Ptr{iio_context})
-    return C_iio_context_find_device(context, "cf-ad9361-lpc");
-end
+"""
+    getTRXDevices(context)
 
-# Returns two Ptr{iio_device} for TX and RX.
-# Throws an error if the devices are not found in the context provided.
-function getStreamingDevices(context::Ptr{iio_context})
-    txDevice = getTXStreamingDevice(context);
-    rxDevice = getRXStreamingDevice(context);
+Returns `txDevice::Ptr{iio_device}, rxDevice::Ptr{iio_device}` from the given context.
+"""
+function getTRXDevices(context::Ptr{iio_context})
+    txDevice = C_iio_context_find_device(context, TX_DEVICE_NAME);
+    rxDevice = C_iio_context_find_device(context, RX_DEVICE_NAME);
     return txDevice, rxDevice;
 end
 
-# Returns two Ptr{iio_channel} for TX and RX.
-# Throws an error if the device or channels are not found in the context provided.
-function getPhyChannels(context::Ptr{iio_context}, txID=0, rxID=0)
-    device = C_iio_context_find_device(context, "ad9361-phy");
+"""
+    getTRXChannels(context[, txID, rxID])
+
+Returns `txChannel::Ptr{iio_channel}, rxChannel::Ptr{iio_channel}` from the given context.
+
+# Arguments
+- `context::Ptr{iio_context}` : the context to get the channels from.
+- `txID::Integer=0` : the tx channel number (ex : 0 for tx channel "voltage0").
+- `rxID::Integer=0` : the rx channel number (ex : 0 for rx channel "voltage0").
+"""
+function getTRXChannels(context::Ptr{iio_context}, txID=0, rxID=0)
+    device = C_iio_context_find_device(context, PHY_DEVICE_NAME);
     txChannel = C_iio_device_find_channel(device, "voltage" * string(txID), true);
     rxChannel = C_iio_device_find_channel(device, "voltage" * string(rxID), false);
 
     return txChannel, rxChannel;
 end
 
-# Returns two Ptr{iio_channel} for TXLo et RXLo.
-# Throws an error if the device or channels are not found in the context provided.
+"""
+    getLoChannels(context[, txLoID, rxLoID])
+
+Returns `txLoChannel::Ptr{iio_channel}, rxLoChannel::Ptr{iio_channel}` from the given context.
+
+# Arguments
+- `context::Ptr{iio_context}` : the context to get the channels from.
+- `txLoID::Integer=1` : the tx lo channel number (ex : 1 for tx lo channel "altvoltage1").
+- `rxLoID::Integer=0` : the rx lo channel number (ex : 0 for rx lo channel "altvoltage0").
+"""
 function getLoChannels(context::Ptr{iio_context}, txLoID=1, rxLoID=0)
-    device = C_iio_context_find_device(context, "ad9361-phy");
+    device = C_iio_context_find_device(context, PHY_DEVICE_NAME);
     txLoChannel = C_iio_device_find_channel(device, "altvoltage" * string(txLoID), true);
     rxLoChannel = C_iio_device_find_channel(device, "altvoltage" * string(rxLoID), true);
 
     return txLoChannel, rxLoChannel;
 end
 
-function cfgStreamingChannels(context::Ptr{iio_context}, txCfg::streamCfg, rxCfg::streamCfg)
-    txChannel, rxChannel = getPhyChannels(context);
+"""
+    cfgChannels(context, txCfg, rxCfg)
+
+Configures the RX, RX LO, TX, and TX LO channels from the provided configurations.
+Returns the configured channels.
+
+# Arguments
+- `context::Ptr{iio_context}` : the context to get the channels from.
+- `txCfg::ChannelCfg` : the tx configuration (port / bandwidth / sampling rate / frequency).
+- `rxCfg::ChannelCfg` : the rx configuration (port / bandwidth / sampling rate / frequency).
+"""
+function cfgChannels(context::Ptr{iio_context}, txCfg::ChannelCfg, rxCfg::ChannelCfg)
+    txChannel, rxChannel = getTRXChannels(context);
     txLoChannel, rxLoChannel = getLoChannels(context);
 
+    return cfgChannels(txChannel, rxChannel, txLoChannel, rxLoChannel, txCfg, rxCfg);
+end
+
+"""
+    cfgChannels(txChannel, rxChannel, txLoChannel, rxLoChannel, txCfg, rxCfg)
+
+Configures the RX, RX LO, TX, and TX LO channels from the provided configurations.
+Returns the configured channels.
+
+# Arguments
+- `txChannel::Ptr{iio_channel}` : the tx channel.
+- `rxChannel::Ptr{iio_channel}` : the rx channel.
+- `txLoChannel::Ptr{iio_channel}` : the tx lo channel.
+- `rxLoChannel::Ptr{iio_channel}` : the rx lo channel.
+- `txCfg::ChannelCfg` : the tx configuration (port / bandwidth / sampling rate / frequency).
+- `rxCfg::ChannelCfg` : the rx configuration (port / bandwidth / sampling rate / frequency).
+"""
+function cfgChannels(
+    txChannel::Ptr{iio_channel},
+    rxChannel::Ptr{iio_channel},
+    txLoChannel::Ptr{iio_channel},
+    rxLoChannel::Ptr{iio_channel},
+    txCfg::ChannelCfg,
+    rxCfg::ChannelCfg
+)
     C_iio_channel_attr_write(txChannel, "rf_port_select", txCfg.rfport);
     C_iio_channel_attr_write_longlong(txChannel, "rf_bandwidth", txCfg.bandwidth);
     C_iio_channel_attr_write_longlong(txChannel, "sampling_frequency", txCfg.samplingRate);
@@ -238,13 +336,28 @@ function cfgStreamingChannels(context::Ptr{iio_context}, txCfg::streamCfg, rxCfg
     return txChannel, rxChannel, txLoChannel, rxLoChannel;
 end
 
+"""
+    getIQChannels(device, iID, qID, isOutput)
+
+Returns `IChannel::Ptr{iio_channel}, QChannel::Ptr{iio_channel}` from the given device.
+
+# Arguments
+- `device::Ptr{iio_device}` : the device to get the channels from.
+- `iID::String` : identification string for the I channel (ex : "voltage0").
+- `qID::String` : identification string for the Q channel (ex : "voltage1").
+- `isOutput::Bool` : whether the IQ channels are outputs.
+"""
 function getIQChannels(device::Ptr{iio_device}, iID::String, qID::String, isOutput::Bool)
-    ichannel = C_iio_device_find_channel(device, iID, isOutput);
-    qchannel = C_iio_device_find_channel(device, qID, isOutput);
-    return ichannel, qchannel;
+    IChannel = C_iio_device_find_channel(device, iID, isOutput);
+    QChannel = C_iio_device_find_channel(device, qID, isOutput);
+    return IChannel, QChannel;
 end
 
-# TODO: cleaner warning printing
+"""
+    getEffectiveCfg(wrapper)
+
+Returns the effective sampling rate and carrier frequency of either a `txWrapper` or `rxWrapper`.
+"""
 function getEffectiveCfg(wrapper::Union{txWrapper, rxWrapper})
     ret, effectiveSamplingRate = C_iio_channel_attr_read(wrapper.chn, "sampling_frequency");
     if ret < 0
@@ -262,6 +375,18 @@ function getEffectiveCfg(wrapper::Union{txWrapper, rxWrapper})
     return effectiveSamplingRate, effectiveCarrierFreq;
 end
 
+"""
+    getBuffer(device, channel, samplesCount)
+
+Creates a buffer for the provided channel. Returns a wrapper around the buffer with basic info
+(pointer, sample size, first sample, last sample, steps between samples).
+
+# Arguments
+- `device::Ptr{iio_device}` : the device in which the buffer is created.
+- `channel::Ptr{iio_channel}` : the channel from which the buffer will be filled.
+- `samplesCound::UInt` : the size of the buffer in samples.
+
+"""
 function getBuffer(device::Ptr{iio_device}, channel::Ptr{iio_channel}, samplesCount::UInt)
     sampleSize = C_iio_device_get_sample_size(device);
     buf = C_iio_device_create_buffer(device, samplesCount, false);
@@ -277,7 +402,42 @@ end
 # --- Module functions --- #
 # ------------------------ #
 
-function openPluto(txCfg::streamCfg, rxCfg::streamCfg, uri="auto", backend="usb")
+"""
+    open(carrierFreq, samplingRate, bandwidth[, uri, backend])
+
+Creates a PlutoSDR struct and configure the radio to stream the samples.
+
+# Arguments
+- `carrierFreq::Int` : the carrier frequency for both tx and rx.
+- `samplingRate::Int` : the sampling rate for both tx and rx.
+- `bandwidth::Int` : the bandwidth for both tx and rx.
+- `bufferSize::UInt=1024*1024` : the buffer size in samples.
+- `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
+- `backend::String="usb"` : the backend to scan for the auto uri.
+"""
+function open(carrierFreq::Int, samplingRate::Int, bandwidth::Int, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
+    return open(
+        ChannelCfg("A", carrierFreq, samplingRate, bandwidth),
+        ChannelCfg("A_BALANCED", carrierFreq, samplingRate, bandwidth),
+        bufferSize,
+        uri,
+        backend
+    );
+end
+
+"""
+    open(txCfg, rxCfg[, uri, backend])
+
+Creates a PlutoSDR struct and configure the radio to stream the samples.
+
+# Arguments
+- `txCfg::ChannelCfg` : the port / bandwidth / sampling rate / carrier frequency for the tx channels.
+- `rxCfg::ChannelCfg` : the port / bandwidth / sampling rate / carrier frequency for the rx channels.
+- `bufferSize::UInt=1024*1024` : the buffer size in samples.
+- `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
+- `backend::String="usb"` : the backend to scan for the auto uri.
+"""
+function open(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
     if uri == "auto"
         uri = scan(backend);
         if uri == ""
@@ -286,8 +446,8 @@ function openPluto(txCfg::streamCfg, rxCfg::streamCfg, uri="auto", backend="usb"
     end
 
     context = getContext(uri);
-    tx, rx = getStreamingDevices(context);
-    txChannel, rxChannel, txLoChannel, rxLoChannel = cfgStreamingChannels(context, txCfg, rxCfg);
+    tx, rx = getTRXDevices(context);
+    txChannel, rxChannel, txLoChannel, rxLoChannel = cfgChannels(context, txCfg, rxCfg);
     tx0_i, tx0_q = getIQChannels(tx, "voltage0", "voltage1", true);
     rx0_i, rx0_q = getIQChannels(rx, "voltage0", "voltage1", false);
 
@@ -320,8 +480,8 @@ function openPluto(txCfg::streamCfg, rxCfg::streamCfg, uri="auto", backend="usb"
     rxEffectiveSamplingRate, rxEffectiveCarrierFreq = getEffectiveCfg(iioRx);
 
     # 1 MiS buffers
-    txBuffer = getBuffer(tx, tx0_i, UInt64(1024*1024));
-    rxBuffer = getBuffer(rx, rx0_i, UInt64(1024*1024));
+    txBuffer = getBuffer(tx, tx0_i, bufferSize);
+    rxBuffer = getBuffer(rx, rx0_i, bufferSize);
 
     tx = PlutoTx(
         iioTx,
@@ -350,7 +510,12 @@ function openPluto(txCfg::streamCfg, rxCfg::streamCfg, uri="auto", backend="usb"
     return pluto;
 end
 
-function closePluto(pluto::Pluto)
+"""
+    close(pluto)
+
+Frees the C allocated memory associated to the pluto structure.
+"""
+function close(pluto::Pluto)
     if pluto.released
         @warn "Pluto has already been released, abort call";
     else
@@ -367,56 +532,97 @@ function closePluto(pluto::Pluto)
     end
 end
 
+"""
+    updateRXGainMode!(pluto[, mode])
+
+Modifies the pluto RX channel gain control mode.
+Returns an error code < 0 if it doesn't succeed.
+
+Arguments :
+- `pluto::Pluto` : the radio to modify.
+- `mode::GainMode=DEFAULT` : the new gain mode. DEFAULT ≡ FAST_ATTACK.
+"""
+function updateRXGainMode!(pluto::Pluto, mode::GainMode=DEFAULT)
+    control_mode = "";
+    if mode == MANUAL
+        control_mode = "manual"
+    elseif mode == FAST_ATTACK
+        control_mode = "fast_attack"
+    elseif mode == SLOW_ATTACK
+        control_mode = "slow_attack"
+    elseif mode == HYBRID
+        control_mode = "hybrid"
+    else
+        control_mode = "fast_attack"
+    end
+
+    return C_iio_channel_attr_write(pluto.rx.iio.chn, "gain_control_mode", control_mode);
+end
+
+"""
+    updateRXGain!(pluto, value)
+
+Changes the gain control mode to manual et sets the given value.
+Prints a warning and returns the error code if it doesn't succeed.
+
+Arguments :
+- `pluto::Pluto` : the radio to modify.
+- `value::Int64` : the manual gain value.
+"""
 function updateRXGain!(pluto::Pluto, value::Int64)
-    ret = C_iio_channel_attr_write(pluto.rx.iio.chn, "gain_control_mode", "manual");
+    ret = updateRXGainMode!(pluto, MANUAL);
     if ret < 0
         @warnrx "Could not set gain_control_mode to manual (Error $ret):\n" * C_iio_strerror(ret);
+        return ret;
     end
     ret = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "hardwaregain", value);
     if ret < 0
         @warnrx "Could not set hardwaregain to $value (Error $ret):\n" * C_iio_strerror(ret);
     end
+    return ret;
 end
 
-function nbytesToType(nbytes::Cssize_t)
-    type = Nothing, Nothing;
-    if nbytes == 1
-        type = UInt8, Int8;
-    elseif nbytes == 2
-        type = UInt16, Cshort;
-    elseif nbytes == 4
-        type = UInt32, Cint;
-    elseif nbytes == 8
-        type = UInt64, Clonglong;
-    end
-    return type;
-end
+"""
+    recv(pluto)
 
+Refills the buffers, read them, converts the samples to complex numbers.
+Returns the number of bytes received, the samples as comlex numbers, and the raw i and q samples as UInt8 arrays.
+"""
 function recv(pluto::Pluto)
+    buffer_size = UInt(pluto.rx.buf.size * pluto.rx.buf.sample_size ÷ 2);
+    dst_i = zeros(UInt8, buffer_size);
+    dst_q = zeros(UInt8, buffer_size);
+    nbytes, complex_samples = recv!(pluto, dst_i, dst_q);
+    return nbytes, complex_samples, dst_i, dst_q;
+end
+
+"""
+    recv!(pluto, dst_i, dst_q)
+
+Refills the buffers, read them, converts the samples to complex numbers.
+Modifies dst_i and dst_q to store the raw samples.
+Returns the total number of bytes received and an array containing the samples as complex numbers.
+"""
+function recv!(pluto::Pluto, dst_i::Array{UInt8}, dst_q::Array{UInt8});
     nbytes = C_iio_buffer_refill(pluto.rx.buf.ptr);
     if (nbytes < 0)
         return nbytes, [];
     end
     # demux and convert samples, loads into a julia array
-    nbytes, sig = C_iio_channel_read(pluto.rx.iio.rx0_i, pluto.rx.buf.ptr);
+    # TODO: find out if the arrays are smaller than the buffers, does multiple iio_channel_read calls read the whole buffer?
+    nbytes_i = C_iio_channel_read!(pluto.rx.iio.rx0_i, pluto.rx.buf.ptr, dst_i);
+    nbytes_q = C_iio_channel_read!(pluto.rx.iio.rx0_q, pluto.rx.buf.ptr, dst_q);
     # TODO: find out if it's needed or those values are constants
-    pluto.rx.buf.first = C_iio_buffer_first(pluto.rx.buf.ptr, pluto.rx.iio.rx0_i);
-    pluto.rx.buf.last = C_iio_buffer_end(pluto.rx.buf.ptr);
-    pluto.rx.buf.step = C_iio_buffer_step(pluto.rx.buf.ptr);
+    #  pluto.rx.buf.first = C_iio_buffer_first(pluto.rx.buf.ptr, pluto.rx.iio.rx0_i);
+    #  pluto.rx.buf.last = C_iio_buffer_end(pluto.rx.buf.ptr);
+    #  pluto.rx.buf.step = C_iio_buffer_step(pluto.rx.buf.ptr);
 
     bytes_per_value = div(pluto.rx.buf.step, 2); # i and q
-    utype, type = nbytesToType(bytes_per_value);
-    # ugly one liner to convert and bitshift into a new array
-    #  tmp = map(x -> utype(x[2]) << (8 * ((x[1] - 1) % bytes_per_value)), enumerate(sig));
-    #  res = map(x -> reduce(+, tmp[(x-1)*bytes_per_value+1:x*bytes_per_value]), 1:div(nbytes, bytes_per_value));
-    # TODO: clean previous lines (always same data type ?)
-    # TODO: check byte ordering
-    res = collect(reinterpret(Complex{type}, sig));
+    utype, type, utype_norm, type_norm = nbytesToType(bytes_per_value); # get the appropriate types and their max values
+    # interleave I and Q channels, reinterpret as Complex, "normalize" so that real and imaginary part don't exceed 1
+    res = reinterpret(Complex{type}, [dst_i dst_q]'[:]) / Float32(type_norm);
 
-    # @show div(nbytes, bytes_per_value);
-
-    return sig, res;
+    return nbytes_i + nbytes_q, res;
 end
-
 
 end

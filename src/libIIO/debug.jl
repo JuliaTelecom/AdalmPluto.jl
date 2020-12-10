@@ -1,7 +1,53 @@
+"""
+    C_iio_device_get_sample_size(device)
+
+Get the current sample size.
+
+# Parameters
+- `device::Ptr{iio_device}` : A pointer to an iio_device structure
+
+# Returns
+    On success, the sample size in bytes
+    On error, a negative errno code is returned
+
+NOTE: The sample size is not constant and will change when channels get enabled or disabled.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Debug.html#ga52b3e955c10d6f962b2c2e749c7c02fb)
+"""
+# TODO: check the note above about sample size not being constant
 function C_iio_device_get_sample_size(device::Ptr{iio_device})
     return ccall(
         (:iio_device_get_sample_size, libIIO),
         Cssize_t, (Ptr{iio_device},),
         device
     );
+end
+
+"""
+    C_iio_device_identify_filename(device, filename)
+
+Identify the channel or debug attribute corresponding to a filename.
+
+# Parameters
+- `device::Ptr{iio_device}` : A pointer to an iio_device structure
+- `filename::String` : A NULL-terminated string corresponding to the filename
+    chn	A pointer to a pointer of an iio_channel structure. The pointed pointer will be set to the address of the iio_channel structure if the filename correspond to the attribute of a channel, or NULL otherwise.
+    attr	A pointer to a NULL-terminated string. The pointer pointer will be set to point to the name of the attribute corresponding to the filename.
+
+# Returns
+    On success, `(0, channel::Ptr{iio_channel}, attribute::String)` is returned.
+    On error, `(errno, NULL, NULL)` is returned, where errno is a negative error code.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Debug.html#ga87ef46fa578c7be7b3e2a6f9f16fdf7e)
+"""
+# TODO: document somewhere that this is the proper way to do modified pointers to pointers arguments w/o segfault
+function C_iio_device_identify_filename(device::Ptr{iio_device}, filename::String)
+    channel = Ref{Ptr{iio_channel}}();
+    attribute = Ref{Ptr{Cuchar}}();
+    ret = ccall(
+        (:iio_device_identify_filename, libIIO),
+        Cint, (Ptr{iio_device}, Cstring, Ptr{Ptr{iio_channel}}, Ptr{Ptr{Cuchar}}),
+        device, filename, channel, attribute
+    );
+    return ret, channel[], Base.unsafe_string(attribute[]);
 end

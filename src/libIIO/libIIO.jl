@@ -1,14 +1,39 @@
-# Cstring always converted
-# No number conversion
-# void * -> Ptr{Cuchar}
-# probably a bunch of typos
-# implicit conversions by ccall that I did not verify
-# always creates the necessary buffers / variables
+module libIIO_jl
+
+# TODO: if I have the time, look into bindgen
+
 # TODO: make it possible to provide buffers / variables
 # TODO: convert C numeric types to julia types
+# TODO: T E S T S (a lot of implicit conversions)
+# Cstring always converted
+# No number conversion
+# Probably contains typos
 
+using Pkg.Artifacts;
+
+# init globals and lib path
+const libIIO_rootpath = artifact"libIIO";
+const libIIO = joinpath(libIIO_rootpath, "libiio.so");
+# needed for libIIO functions, maybe move them ?
+const BUF_SIZE = 2^12; # same value as iio_common.h
+const C_INT_MAX = 2^31 - 1;
 # disable Julia errors and return the NULL/error code instead
 NO_ASSERT = false;
+
+# adds a udev rule needed for usb devices
+# should be a volatile rule and will need to be added each boot
+# but it makes it possible to delete the artifact without leftovers
+function __init__()
+    if !isfile("/run/udev/rules.d/90-libiio.rules")
+        println("Could not find the necessary udev rule.\nAdding it to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
+        rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
+        open("/tmp/90-libiio.rules", "w") do f
+            write(f, rule);
+        end
+        run(`sudo mkdir -p /run/udev/rules.d`);
+        run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
+    end
+end
 
 # helpers
 include("helpers.jl");
@@ -157,7 +182,8 @@ export
     C_iio_channel_is_enabled,
     C_iio_channel_is_output,
     C_iio_channel_is_scan_element,
-    C_iio_channel_read,                     # PLACEHOLDER : data format ?
+    C_iio_channel_read,
+    C_iio_channel_read!,
     C_iio_channel_read_raw,                 # PLACEHOLDER : data format ?
     C_iio_channel_set_data,
     C_iio_channel_write,                    # PLACEHOLDER : data format ?
@@ -186,5 +212,8 @@ export
 
 # debug exports
 export
-    C_iio_device_get_sample_size
+    C_iio_device_get_sample_size,
+    C_iio_device_identify_filename
 ;
+
+end

@@ -2,27 +2,83 @@
 # --- Structures --- #
 # ------------------ #
 
+"""
+    iio_context_info
+
+Empty struct to manage pointers to the `iio_context_info` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__context__info.html)
+"""
 mutable struct iio_context_info
 end
 
+"""
+    iio_scan_block
+
+Empty struct to manage pointers to the `iio_scan_block` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#gad7fd2ea05bf5a8cebaff26b60edb8a13)
+"""
 mutable struct iio_scan_block
 end
 
+"""
+    iio_scan_context
+
+Empty struct to manage pointers to the `iio_scan_context` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#gaa333dd2e410a2769cf5685019185d99c)
+"""
 mutable struct iio_scan_context
 end
 
+"""
+    iio_context
+
+Empty struct to manage pointers to the `iio_context` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__context.html)
+"""
 mutable struct iio_context
 end
 
+"""
+    iio_device
+
+Empty struct to manage pointers to the `iio_device` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__device.html)
+"""
 mutable struct iio_device
 end
 
+"""
+    iio_channel
+
+Empty struct to manage pointers to the `iio_channel` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__channel.html)
+"""
 mutable struct iio_channel
 end
 
+"""
+    iio_buffer
+
+Empty struct to manage pointers to the `iio_buffer` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__buffer.html)
+"""
 mutable struct iio_buffer
 end
 
+"""
+    iio_data_format
+
+Empty struct to manage pointers to the `iio_data_format` C struct.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__data__format.html)
+"""
 mutable struct iio_data_format
 end
 
@@ -30,9 +86,22 @@ end
 # -------------- #
 # --- Macros --- #
 # -------------- #
+"""
+    @assert_null_pointer expression
 
-# TODO : find a clean way to make it only one macro
-# iio structures
+    Throws an error if the expression does not return a non-null pointer.
+    If the expression return a `Ptr{type}` the error message is "type* null pointer".
+"""
+macro assert_null_pointer(ex)
+    quote
+        local val = $(esc(ex));
+        typeassert(val, Ptr) != Ptr{Any}(0) || NO_ASSERT || throw(AssertionError(string(typeof(val))[5:end-1] * "* null pointer"));
+        val
+    end
+end
+
+# !!! Replaced by the unique macro assert_null_pointer
+# TODO : confirm @assert_null_pointer works properly and remove old macros
 macro assert_context_info(ex)
     :($(esc(ex)) != Ptr{iio_context_info}(0) || NO_ASSERT || error("iio_context_info null pointer"));
 end
@@ -70,6 +139,14 @@ end
 # ------------- #
 # --- Enums --- #
 # ------------- #
+
+"""
+    iio_modifier
+
+Copy of the equivalent C enum.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/iio_8h.html#a944ad22f426e09cdbb493081a05472e5)
+"""
 @enum iio_modifier begin
     IIO_NO_MOD
 	IIO_MOD_X
@@ -117,6 +194,13 @@ end
 	IIO_MOD_H2
 end
 
+"""
+    iio_chan_type
+
+Copy of the equivalent C enum.
+
+[libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/iio_8h.html#a29714c3a5add6b599e29be0485ca548b)
+"""
 @enum iio_chan_type begin
     IIO_VOLTAGE
 	IIO_CURRENT
