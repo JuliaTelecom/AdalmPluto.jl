@@ -1,6 +1,6 @@
 # --- All libIIO functions wrapped --- #
 
-module PlutoSDR
+module AdalmPluto
 
 using Reexport;
 
