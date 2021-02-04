@@ -2,7 +2,7 @@
 
 [[AdalmPluto]]
 deps = ["Pkg", "Reexport", "Test"]
-git-tree-sha1 = "8357075e87b74e41f7fd14f149c58ba3ca1fc58a"
+git-tree-sha1 = "42a569a53d7fa5e8e24923755fc8ffbf88fee5ee"
 repo-rev = "AbstractSDRs_integration"
 repo-url = ".."
 uuid = "af34ca7c-e544-47d5-a6fe-72495f08728e"

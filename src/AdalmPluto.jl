@@ -110,7 +110,7 @@ end
 
 Layout :
 
-`
+```
 PlutoSDR
 +-- ctx::Ptr{iio_context}
 |
@@ -182,7 +182,7 @@ PlutoSDR
 |   +-- released::Bool
 |
 +-- released::Bool
-`
+```
 
 """
 mutable struct PlutoSDR
