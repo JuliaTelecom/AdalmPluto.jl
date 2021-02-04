@@ -1,26 +1,22 @@
-using PlutoSDR;
+using AdalmPluto;
 using Test;
 using Plots;
 
 include("fm.jl");
 
 function test_recvOnce()
-    txCfg = PlutoSDR.ChannelCfg("A", 4e6, 4e6, 105.5e6);
-    rxCfg = PlutoSDR.ChannelCfg("A_BALANCED", 4e6, 4e6, 105.5e6);
-
     try
-        pluto = PlutoSDR.open(txCfg, rxCfg);
-        nbytes, complex_samples, raw_i, raw_q = PlutoSDR.recv(pluto);
-        PlutoSDR.close(pluto);
+        radio = openPluto(Int64(105.5e6), Int64(4e6), 60);
+        samples = recv(radio, 2*1024*1024 + 1);
+        AdalmPluto.close(radio);
     catch e
-        #  rethrow(e)
-        return 1;
+        rethrow(e)
     end
 
     return 0;
 end
 
-@testset "PlutoSDR.jl" begin
+@testset "AdalmPluto.jl" begin
     @test test_recvOnce() == 0;
     # TODO: test at least all the exported functions
 end

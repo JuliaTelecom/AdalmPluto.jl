@@ -1,16 +1,18 @@
-src/PlutoSDR.jl:612:    # TODO: find out if the arrays are smaller than the buffers, does multiple iio_channel_read calls read the whole buffer?
-src/PlutoSDR.jl:615:    # TODO: find out if it's needed or those values are constants
+src/AdalmPluto.jl:4:# TODO: unit testing
+src/AdalmPluto.jl:818:    # TODO: make this function somewhat error resilient
+src/AdalmPluto.jl:827:        # TODO: unfuck the indexes (refill the Julia buffer in an appropriate order)
 src/utils.jl:22:# TODO: macro/function to print errors
 src/libIIO/libIIO.jl:3:# TODO: if I have the time, look into bindgen
 src/libIIO/libIIO.jl:5:# TODO: make it possible to provide buffers / variables
 src/libIIO/libIIO.jl:6:# TODO: convert C numeric types to julia types
 src/libIIO/libIIO.jl:7:# TODO: T E S T S (a lot of implicit conversions)
+src/libIIO/libIIO.jl:18:# TODO : remove ?
 src/libIIO/device.jl:588:# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
 src/libIIO/device.jl:617:# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
 src/libIIO/device.jl:669:# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
 src/libIIO/device.jl:826:# TODO: test
 src/libIIO/device.jl:938:# TODO: test (pretty sure it doesn't work, at least not in a reliable way)
-src/libIIO/structures.jl:104:# TODO : confirm @assert_null_pointer works properly and remove old macros
+src/libIIO/structures.jl:113:# TODO : confirm @assert_null_pointer works properly and remove old macros
 src/libIIO/channel.jl:16:# TODO : does implicit ccall conversion to Cstring causes errors when NULL is returned?
 src/libIIO/channel.jl:366:# TODO: fix unsafe_string
 src/libIIO/channel.jl:499:# TODO: check return value
