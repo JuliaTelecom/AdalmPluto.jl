@@ -696,6 +696,39 @@ function updateSamplingRate!(pluto::PlutoSDR, value::Int64)
 end
 
 """
+    updateBandwidth!(pluto, value)
+
+Changes the bandwidth. Prints the new value.
+
+# Arguments
+- `pluto::PlutoSDR` : the radio to modify.
+- `value::Int64` : the new sampling rate.
+
+# Returns
+- `errno::Int` : 0 or a negative error code.
+"""
+function updateBandwidth!(pluto, value)
+    # set the bandwidth for RX
+    errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "rf_bandwidth", value);
+    if (errno < 0); return errno; end;
+
+    # store the new configuration for RX
+    @info "New RX bandwidth : $value"
+    pluto.rx.cfg.samplingRate = value;
+
+    # set the bandwidth for TX
+    errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn, "rf_bandwidth", value);
+    if (errno < 0); return errno; end;
+
+    # store the new configuration for TX
+    @info "New TX bandwidth : $value"
+    pluto.tx.cfg.samplingRate = value;
+
+    # not actually errno because it's equal to the number of bytes written
+    return 0;
+end
+
+"""
     recv(pluto, nbSamples)
 
 Reads nbSamples from the Julia buffer. If there are less than nbSamples samples in the Julia buffer,
