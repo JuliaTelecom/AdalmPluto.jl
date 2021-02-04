@@ -15,17 +15,17 @@ include("utils.jl");
 # --- struct exports --- #
 export
     ChannelCfg,
-    Pluto
+    PlutoSDR
 ;
 
 # --- functions exports --- #
 export
-    open,
+    openPluto,
     close,
     recv,
     recv!,
-    updateRXGain!,
-    updateRXGainMode!
+    updateGain!,
+    updateGainMode!
 ;
 
 # constants
@@ -100,11 +100,11 @@ end
 
 # --- final wrap --- #
 """
-    Pluto
+    PlutoSDR
 
 Layout :
 
-Pluto
+PlutoSDR
 +-- ctx::Ptr{iio_context}
 |
 +-- tx::PlutoTx
@@ -169,7 +169,7 @@ Pluto
 +-- released::Bool
 
 """
-mutable struct Pluto
+mutable struct PlutoSDR
     ctx::Ptr{iio_context};
     tx::PlutoTx;
     rx::PlutoRx;
@@ -222,14 +222,12 @@ function scan(backend::String, deviceIndex=1, doPrint=true)
     return uri;
 end
 
-# Returns a Ptr{iio_context} from the given URI
-# Throws an error if there are no devices in this context
 """
-    getContext(uri)
+    createContext(uri)
 
 Returns the `iio_context` corresponding the the provided uri. Throws an error if no devices are found in the context.
 """
-function getContext(uri::String)
+function createContext(uri::String)
     context = C_iio_create_context_from_uri(uri);
     if(C_iio_context_get_devices_count(context) == 0) error("No device found in context from uri $uri"); end
     return context;
@@ -237,18 +235,18 @@ end
 
 
 """
-    getTRXDevices(context)
+    findTRXDevices(context)
 
 Returns `txDevice::Ptr{iio_device}, rxDevice::Ptr{iio_device}` from the given context.
 """
-function getTRXDevices(context::Ptr{iio_context})
+function findTRXDevices(context::Ptr{iio_context})
     txDevice = C_iio_context_find_device(context, TX_DEVICE_NAME);
     rxDevice = C_iio_context_find_device(context, RX_DEVICE_NAME);
     return txDevice, rxDevice;
 end
 
 """
-    getTRXChannels(context[, txID, rxID])
+    findTRXChannels(context[, txID, rxID])
 
 Returns `txChannel::Ptr{iio_channel}, rxChannel::Ptr{iio_channel}` from the given context.
 
@@ -257,7 +255,7 @@ Returns `txChannel::Ptr{iio_channel}, rxChannel::Ptr{iio_channel}` from the give
 - `txID::Integer=0` : the tx channel number (ex : 0 for tx channel "voltage0").
 - `rxID::Integer=0` : the rx channel number (ex : 0 for rx channel "voltage0").
 """
-function getTRXChannels(context::Ptr{iio_context}, txID=0, rxID=0)
+function findTRXChannels(context::Ptr{iio_context}, txID=0, rxID=0)
     device = C_iio_context_find_device(context, PHY_DEVICE_NAME);
     txChannel = C_iio_device_find_channel(device, "voltage" * string(txID), true);
     rxChannel = C_iio_device_find_channel(device, "voltage" * string(rxID), false);
@@ -266,7 +264,7 @@ function getTRXChannels(context::Ptr{iio_context}, txID=0, rxID=0)
 end
 
 """
-    getLoChannels(context[, txLoID, rxLoID])
+    findLoChannels(context[, txLoID, rxLoID])
 
 Returns `txLoChannel::Ptr{iio_channel}, rxLoChannel::Ptr{iio_channel}` from the given context.
 
@@ -275,7 +273,7 @@ Returns `txLoChannel::Ptr{iio_channel}, rxLoChannel::Ptr{iio_channel}` from the 
 - `txLoID::Integer=1` : the tx lo channel number (ex : 1 for tx lo channel "altvoltage1").
 - `rxLoID::Integer=0` : the rx lo channel number (ex : 0 for rx lo channel "altvoltage0").
 """
-function getLoChannels(context::Ptr{iio_context}, txLoID=1, rxLoID=0)
+function findLoChannels(context::Ptr{iio_context}, txLoID=1, rxLoID=0)
     device = C_iio_context_find_device(context, PHY_DEVICE_NAME);
     txLoChannel = C_iio_device_find_channel(device, "altvoltage" * string(txLoID), true);
     rxLoChannel = C_iio_device_find_channel(device, "altvoltage" * string(rxLoID), true);
@@ -295,8 +293,8 @@ Returns the configured channels.
 - `rxCfg::ChannelCfg` : the rx configuration (port / bandwidth / sampling rate / frequency).
 """
 function cfgChannels(context::Ptr{iio_context}, txCfg::ChannelCfg, rxCfg::ChannelCfg)
-    txChannel, rxChannel = getTRXChannels(context);
-    txLoChannel, rxLoChannel = getLoChannels(context);
+    txChannel, rxChannel = findTRXChannels(context);
+    txLoChannel, rxLoChannel = findLoChannels(context);
 
     return cfgChannels(txChannel, rxChannel, txLoChannel, rxLoChannel, txCfg, rxCfg);
 end
@@ -337,7 +335,7 @@ function cfgChannels(
 end
 
 """
-    getIQChannels(device, iID, qID, isOutput)
+    findIQChannels(device, iID, qID, isOutput)
 
 Returns `IChannel::Ptr{iio_channel}, QChannel::Ptr{iio_channel}` from the given device.
 
@@ -347,7 +345,7 @@ Returns `IChannel::Ptr{iio_channel}, QChannel::Ptr{iio_channel}` from the given 
 - `qID::String` : identification string for the Q channel (ex : "voltage1").
 - `isOutput::Bool` : whether the IQ channels are outputs.
 """
-function getIQChannels(device::Ptr{iio_device}, iID::String, qID::String, isOutput::Bool)
+function findIQChannels(device::Ptr{iio_device}, iID::String, qID::String, isOutput::Bool)
     IChannel = C_iio_device_find_channel(device, iID, isOutput);
     QChannel = C_iio_device_find_channel(device, qID, isOutput);
     return IChannel, QChannel;
@@ -376,7 +374,7 @@ function getEffectiveCfg(wrapper::Union{txWrapper, rxWrapper})
 end
 
 """
-    getBuffer(device, channel, samplesCount)
+    createBuffer(device, channel, samplesCount)
 
 Creates a buffer for the provided channel. Returns a wrapper around the buffer with basic info
 (pointer, sample size, first sample, last sample, steps between samples).
@@ -387,7 +385,7 @@ Creates a buffer for the provided channel. Returns a wrapper around the buffer w
 - `samplesCound::UInt` : the size of the buffer in samples.
 
 """
-function getBuffer(device::Ptr{iio_device}, channel::Ptr{iio_channel}, samplesCount::UInt)
+function createBuffer(device::Ptr{iio_device}, channel::Ptr{iio_channel}, samplesCount::UInt)
     sampleSize = C_iio_device_get_sample_size(device);
     buf = C_iio_device_create_buffer(device, samplesCount, false);
     first = C_iio_buffer_first(buf, channel);
@@ -403,7 +401,7 @@ end
 # ------------------------ #
 
 """
-    open(carrierFreq, samplingRate, bandwidth[, uri, backend])
+    openPluto(carrierFreq, samplingRate, bandwidth[, uri, backend])
 
 Creates a PlutoSDR struct and configure the radio to stream the samples.
 
@@ -415,8 +413,8 @@ Creates a PlutoSDR struct and configure the radio to stream the samples.
 - `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
 - `backend::String="usb"` : the backend to scan for the auto uri.
 """
-function open(carrierFreq::Int, samplingRate::Int, bandwidth::Int, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
-    return open(
+function openPluto(carrierFreq::Int, samplingRate::Int, bandwidth::Int, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
+    return openPluto(
         ChannelCfg("A", carrierFreq, samplingRate, bandwidth),
         ChannelCfg("A_BALANCED", carrierFreq, samplingRate, bandwidth),
         bufferSize,
@@ -426,7 +424,7 @@ function open(carrierFreq::Int, samplingRate::Int, bandwidth::Int, bufferSize::U
 end
 
 """
-    open(txCfg, rxCfg[, uri, backend])
+    openPluto(txCfg, rxCfg[, uri, backend])
 
 Creates a PlutoSDR struct and configure the radio to stream the samples.
 
@@ -437,7 +435,7 @@ Creates a PlutoSDR struct and configure the radio to stream the samples.
 - `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
 - `backend::String="usb"` : the backend to scan for the auto uri.
 """
-function open(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
+function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
     if uri == "auto"
         uri = scan(backend);
         if uri == ""
@@ -445,11 +443,11 @@ function open(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024
         end
     end
 
-    context = getContext(uri);
-    tx, rx = getTRXDevices(context);
+    context = createContext(uri);
+    tx, rx = findTRXDevices(context);
     txChannel, rxChannel, txLoChannel, rxLoChannel = cfgChannels(context, txCfg, rxCfg);
-    tx0_i, tx0_q = getIQChannels(tx, "voltage0", "voltage1", true);
-    rx0_i, rx0_q = getIQChannels(rx, "voltage0", "voltage1", false);
+    tx0_i, tx0_q = findIQChannels(tx, "voltage0", "voltage1", true);
+    rx0_i, rx0_q = findIQChannels(rx, "voltage0", "voltage1", false);
 
     C_iio_channel_enable(tx0_i);
     C_iio_channel_enable(tx0_q);
@@ -480,8 +478,8 @@ function open(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024
     rxEffectiveSamplingRate, rxEffectiveCarrierFreq = getEffectiveCfg(iioRx);
 
     # 1 MiS buffers
-    txBuffer = getBuffer(tx, tx0_i, bufferSize);
-    rxBuffer = getBuffer(rx, rx0_i, bufferSize);
+    txBuffer = createBuffer(tx, tx0_i, bufferSize);
+    rxBuffer = createBuffer(rx, rx0_i, bufferSize);
 
     tx = PlutoTx(
         iioTx,
@@ -500,7 +498,7 @@ function open(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024
         false
     );
 
-    pluto = Pluto(
+    pluto = PlutoSDR(
         context,
         tx,
         rx,
@@ -515,7 +513,7 @@ end
 
 Frees the C allocated memory associated to the pluto structure.
 """
-function close(pluto::Pluto)
+function close(pluto::PlutoSDR)
     if pluto.released
         @warn "Pluto has already been released, abort call";
     else
@@ -533,7 +531,7 @@ function close(pluto::Pluto)
 end
 
 """
-    updateRXGainMode!(pluto[, mode])
+    updateGainMode!(pluto[, mode])
 
 Modifies the pluto RX channel gain control mode.
 Returns an error code < 0 if it doesn't succeed.
@@ -542,7 +540,7 @@ Arguments :
 - `pluto::Pluto` : the radio to modify.
 - `mode::GainMode=DEFAULT` : the new gain mode. DEFAULT ≡ FAST_ATTACK.
 """
-function updateRXGainMode!(pluto::Pluto, mode::GainMode=DEFAULT)
+function updateGainMode!(pluto::PlutoSDR, mode::GainMode=DEFAULT)
     control_mode = "";
     if mode == MANUAL
         control_mode = "manual"
@@ -560,7 +558,7 @@ function updateRXGainMode!(pluto::Pluto, mode::GainMode=DEFAULT)
 end
 
 """
-    updateRXGain!(pluto, value)
+    updateGain!(pluto, value)
 
 Changes the gain control mode to manual et sets the given value.
 Prints a warning and returns the error code if it doesn't succeed.
@@ -569,8 +567,8 @@ Arguments :
 - `pluto::Pluto` : the radio to modify.
 - `value::Int64` : the manual gain value.
 """
-function updateRXGain!(pluto::Pluto, value::Int64)
-    ret = updateRXGainMode!(pluto, MANUAL);
+function updateGain!(pluto::PlutoSDR, value::Int64)
+    ret = updateGainMode!(pluto, MANUAL);
     if ret < 0
         @warnrx "Could not set gain_control_mode to manual (Error $ret):\n" * C_iio_strerror(ret);
         return ret;
@@ -588,7 +586,7 @@ end
 Refills the buffers, read them, converts the samples to complex numbers.
 Returns the number of bytes received, the samples as comlex numbers, and the raw i and q samples as UInt8 arrays.
 """
-function recv(pluto::Pluto)
+function recv(pluto::PlutoSDR)
     buffer_size = UInt(pluto.rx.buf.size * pluto.rx.buf.sample_size ÷ 2);
     dst_i = zeros(UInt8, buffer_size);
     dst_q = zeros(UInt8, buffer_size);
@@ -603,7 +601,7 @@ Refills the buffers, read them, converts the samples to complex numbers.
 Modifies dst_i and dst_q to store the raw samples.
 Returns the total number of bytes received and an array containing the samples as complex numbers.
 """
-function recv!(pluto::Pluto, dst_i::Array{UInt8}, dst_q::Array{UInt8});
+function recv!(pluto::PlutoSDR, dst_i::Array{UInt8}, dst_q::Array{UInt8});
     nbytes = C_iio_buffer_refill(pluto.rx.buf.ptr);
     if (nbytes < 0)
         return nbytes, [];
