@@ -109,36 +109,6 @@ macro assert_null_pointer(ex)
     end
 end
 
-# !!! Replaced by the unique macro assert_null_pointer
-# TODO : confirm @assert_null_pointer works properly and remove old macros
-macro assert_context_info(ex)
-    :($(esc(ex)) != Ptr{iio_context_info}(0) || NO_ASSERT || error("iio_context_info null pointer"));
-end
-
-macro assert_scan_block(ex)
-    :($(esc(ex)) != Ptr{iio_scan_block}(0) || NO_ASSERT || error("iio_scan_block null pointer"));
-end
-
-macro assert_scan_context(ex)
-    :($(esc(ex)) != Ptr{iio_scan_context}(0) || NO_ASSERT || error("iio_scan_context null pointer"));
-end
-
-macro assert_context(ex)
-    :($(esc(ex)) != Ptr{iio_context}(0) || NO_ASSERT || error("iio_context null pointer"));
-end
-
-macro assert_device(ex)
-    :($(esc(ex)) != Ptr{iio_device}(0) || NO_ASSERT || error("iio_device null pointer"));
-end
-
-macro assert_channel(ex)
-    :($(esc(ex)) != Ptr{iio_channel}(0) || NO_ASSERT || error("iio_channel null pointer"));
-end
-
-macro assert_buffer(ex)
-    :($(esc(ex)) != Ptr{iio_buffer}(0) || NO_ASSERT || error("iio_buffer null pointer"));
-end
-
 # other C values
 macro assert_Cstring(ex)
     :($(esc(ex)) != C_NULL || NO_ASSERT || error("Invalid Cstring: NULL pointer"));

@@ -8,8 +8,8 @@ Retrieve the filename of an attribute.
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, a NULL-terminated string
-    If the attribute name is unknown, NULL is returned. This may throw an error.
+- On success, a NULL-terminated string
+- If the attribute name is unknown, NULL is returned. This may throw an error.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gab6462404bb6667e9e9241a18e09a1638)
 """
@@ -25,17 +25,19 @@ end
 
 """
     C_iio_channel_attr_read(channel, attr)
-    Read the content of the given channel-specific attribute.
+
+Read the content of the given channel-specific attribute.
 
 # Parameters
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(nbytes, value::String)` where nbytes is the length of the value string.
-    On error, `(errno, "")` is returned, where errno is a negative error code.
+- On success, `(nbytes, value::String)` where nbytes is the length of the value string.
+- On error, `(errno, "")` is returned, where errno is a negative error code.
 
-NOTE:By passing NULL as the "attr" argument to iio_channel_attr_read, it is now possible to read all of the attributes of a channel.
+# NOTE
+By passing NULL as the "attr" argument to `iio_channel_attr_read`, it is now possible to read all of the attributes of a channel.
 
 The buffer is filled with one block of data per attribute of the channel, by the order they appear in the iio_channel structure.
 
@@ -63,15 +65,16 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Read the content of all channel-specific attributes.
 
 # Parameters
-    chn	A pointer to an iio_channel structure
-    cb	A pointer to a callback function
-    data	A pointer that will be passed to the callback function
+- chn : A pointer to an iio_channel structure
+- cb : A pointer to a callback function
+- data : A pointer that will be passed to the callback function
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
-NOTE: This function is especially useful when used with the network backend, as all the channel-specific attributes are read in one single command.
+# NOTE
+This function is especially useful when used with the network backend, as all the channel-specific attributes are read in one single command.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gab9c28b0cd94c0607bcc7cac16219eb48)
 """
@@ -89,8 +92,8 @@ Read the content of the given channel-specific attribute.
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(0, value::Bool)` is returned
-    On error, `(errno, false)` is returned, where errno is a negative error code. The second value should be discarded.
+- On success, `(0, value::Bool)` is returned
+- On error, `(errno, false)` is returned, where errno is a negative error code. The second value should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga319f39c313bbd4d331e23df51e4d3ce6)
 """
@@ -114,8 +117,8 @@ Read the content of the given channel-specific attribute.
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(0, value::Float64)` is returned
-    On error, `(errno, 0)` is returned, where errno is a negative error code. The second value should be discarded.
+- On success, `(0, value::Float64)` is returned
+- On error, `(errno, 0)` is returned, where errno is a negative error code. The second value should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga75ac9b81eb7e7e8a961afb67748e4102)
 """
@@ -139,8 +142,8 @@ Read the content of the given channel-specific attribute.
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(0, value::Int64)` is returned
-    On error, `(errno, 0)` is returned, where errno is a negative error code. The second value should be discarded.
+- On success, `(0, value::Int64)` is returned
+- On error, `(errno, 0)` is returned, where errno is a negative error code. The second value should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga116c61892bf3d20ff07efd642c5dfbe1)
 """
@@ -165,10 +168,11 @@ Set the value of the given channel-specific attribute.
 - `value::String` : A NULL-terminated string to set the attribute to
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
-NOTE:By passing NULL as the "attr" argument to iio_channel_attr_write, it is now possible to write all of the attributes of a channel.
+# NOTE
+By passing NULL as the "attr" argument to `iio_channel_attr_write`, it is now possible to write all of the attributes of a channel.
 
 The buffer must contain one block of data per attribute of the channel, by the order they appear in the iio_channel structure.
 
@@ -195,15 +199,16 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Set the values of all channel-specific attributes.
 
 # Parameters
-    chn	A pointer to an iio_channel structure
-    cb	A pointer to a callback function
-    data	A pointer that will be passed to the callback function
+- chn : A pointer to an iio_channel structure
+- cb : A pointer to a callback function
+- data : A pointer that will be passed to the callback function
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
-NOTE: This function is especially useful when used with the network backend, as all the channel-specific attributes are written in one single command.
+# NOTE
+This function is especially useful when used with the network backend, as all the channel-specific attributes are written in one single command.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga6df693ee4f0c329d957f7c7ca3588f3f)
 """
@@ -222,8 +227,8 @@ Set the value of the given channel-specific attribute.
 - `value::Bool` : A bool value to set the attribute to
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga9a385b9b05d20f33f8e587feb2ebe81a)
 """
@@ -246,8 +251,8 @@ Set the value of the given channel-specific attribute.
 - `value::Float64` : A double value to set the attribute to
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gad9d6ec4a02948c6416cc99254bdbfa50)
 """
@@ -270,8 +275,8 @@ Set the value of the given channel-specific attribute.
 - `value::Int64` : A long long value to set the attribute to
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gac55cb77a1baf797e54a8a4e31b2f4680)
 """
@@ -287,14 +292,15 @@ end
     C_iio_channel_attr_write_raw(channel, attr, value)
 
 Set the value of the given channel-specific attribute.
+
 # Parameters
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
 - `value` : A pointer to the data to be written. Must be castable to Ptr{Cuchar}.
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gacd0d3dd36bdc64a9f967e21a891230eb)
 """
@@ -333,7 +339,8 @@ Enable the given channel.
 # Parameters
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
-NOTE:Before creating an iio_buffer structure with iio_device_create_buffer, it is required to enable at least one channel of the device to read from.
+# NOTE
+Before creating an iio_buffer structure with `iio_device_create_buffer`, it is required to enable at least one channel of the device to read from.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga2b787983683d37966b5e1e5c6c121d6a)
 """
@@ -355,11 +362,12 @@ Try to find a channel-specific attribute by its name.
 - `name::String` : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, a NULL-terminated string.
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, also throws an error :D
+- On success, a NULL-terminated string.
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, also throws an error :D
 
-NOTE: This function is useful to detect the presence of an attribute. It can also be used to retrieve the name of an attribute as a pointer to a static string from a dynamically allocated string.
+# NOTE
+This function is useful to detect the presence of an attribute. It can also be used to retrieve the name of an attribute as a pointer to a static string from a dynamically allocated string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga13b2db3252a2380a2b0b1bb15b8034a4)
 """
@@ -383,9 +391,9 @@ Get the channel-specific attribute present at the given index.
 - `index::UInt32` : The index corresponding to the attribute
 
 # Returns
-    On success, a NULL-terminated string.
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, also throws an error :D
+- On success, a NULL-terminated string.
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, also throws an error :D
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gafc3c52f360424c097a24d1925923d772)
 """
@@ -407,7 +415,7 @@ Enumerate the channel-specific attributes of the given channel.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    The number of channel-specific attributes found
+- The number of channel-specific attributes found
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga14869c3fda8b04f413a02f15dfa6ef7c)
 """
@@ -428,7 +436,7 @@ Retrieve a previously associated pointer of an iio_channel structure.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    The pointer previously associated if present, or NULL
+- The pointer previously associated if present, or NULL
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gacbce92eaefb8d61c1e4f0dc042b211e6)
 """
@@ -450,7 +458,7 @@ Retrieve a pointer to the iio_device structure.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    A pointer to an iio_device structure
+- A pointer to an iio_device structure
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gaf2800d7a6953c5dd3271df390c062439)
 """
@@ -471,7 +479,7 @@ Retrieve the channel ID (e.g. voltage0)
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    A NULL-terminated string
+- A NULL-terminated string
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gafda1782de4655905ad08a40492f3dc64)
 """
@@ -492,7 +500,7 @@ Get the modifier type of the given channel.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    The modifier type of the channel
+- The modifier type of the channel
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga4c3179cee86d8992ee6c6bdbcaa44156)
 """
@@ -514,9 +522,10 @@ Retrieve the channel name (e.g. vccint)
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    A NULL-terminated string
+- A NULL-terminated string
 
-NOTE: if the channel has no name, NULL is returned. (Throws an error atm)
+# NOTE
+If the channel has no name, NULL is returned. (Throws an error atm)
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga37346a6f3fcfb1eb40572aec6c3b39ac)
 """
@@ -538,7 +547,7 @@ Get the type of the given channel.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    The type of the channel
+- The type of the channel
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga281660051fb40b5b4055227466a3be36)
 """
@@ -558,7 +567,7 @@ end
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    True if the channel is enabled, False otherwise
+- True if the channel is enabled, False otherwise
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gaf10427dc35adaa0991cd34a9dd45a82f)
 """
@@ -579,7 +588,7 @@ Return True if the given channel is an output channel.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    True if the channel is an output channel, False otherwise
+- True if the channel is an output channel, False otherwise
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga3c24e9c93e2217c9506073d04b878461)
 """
@@ -600,7 +609,7 @@ Return True if the given channel is a scan element.
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-    True if the channel is a scan element, False otherwise
+- True if the channel is a scan element, False otherwise
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga07892a3c0c31e7a3eecf76ec72a8669d)
 """
@@ -615,14 +624,14 @@ end
 """
     C_iio_channel_read(chn, buf)
 
-    Demultiplex and convert the samples of a given channel.
+Demultiplex and convert the samples of a given channel.
 
 # Parameters
 - `chn::Ptr{iio_channel}` : A pointer to an iio_channel structure
 - `buf::Ptr{iio_buffer}` : A pointer to an iio_buffer structure
 
 # Returns
-    `(nbytes, dst::Array{UInt8})` where nbytes is the number of bytes written to dst.
+- `(nbytes, dst::Array{UInt8})` where nbytes is the number of bytes written to dst.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30)
 """
@@ -638,7 +647,7 @@ end
 """
     C_iio_channel_read!(chn, buf, dst)
 
-    Demultiplex and convert the samples of a given channel.
+Demultiplex and convert the samples of a given channel.
 
 # Parameters
 - `chn::Ptr{iio_channel}` : A pointer to an iio_channel structure
@@ -646,7 +655,7 @@ end
 - `dst::Array{UInt8}` : An array where the converted data will be stored
 
 # Returns
-    The size of the converted data written is dst, in bytes
+- The size of the converted data written is dst, in bytes
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30)
 """
@@ -667,13 +676,13 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Demultiplex the samples of a given channel.
 
 # Parameters
-    chn	A pointer to an iio_channel structure
-    buffer	A pointer to an iio_buffer structure
-    dst	A pointer to the memory area where the demultiplexed data will be stored
-    len	The available length of the memory area, in bytes
+- chn : A pointer to an iio_channel structure
+- buffer : A pointer to an iio_buffer structure
+- dst : A pointer to the memory area where the demultiplexed data will be stored
+- len : The available length of the memory area, in bytes
 
 # Returns
-    The size of the demultiplexed data, in bytes
+- The size of the demultiplexed data, in bytes
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gacd227a6861960ea2fb49d957f62887dd)
 """
@@ -711,13 +720,13 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Convert and multiplex the samples of a given channel.
 
 # Parameters
-    chn	A pointer to an iio_channel structure
-    buffer	A pointer to an iio_buffer structure
-    src	A pointer to the memory area where the sequential data will be read from
-    len	The length of the memory area, in bytes
+- chn : A pointer to an iio_channel structure
+- buffer : A pointer to an iio_buffer structure
+- src : A pointer to the memory area where the sequential data will be read from
+- len : The length of the memory area, in bytes
 
 # Returns
-    The number of bytes actually converted and multiplexed
+- The number of bytes actually converted and multiplexed
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga52c5a5cc138969b32f78db9669a4ffd2)
 """
@@ -733,13 +742,13 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Multiplex the samples of a given channel.
 
 # Parameters
-    chn	A pointer to an iio_channel structure
-    buffer	A pointer to an iio_buffer structure
-    src	A pointer to the memory area where the sequential data will be read from
-    len	The length of the memory area, in bytes
+- chn : A pointer to an iio_channel structure
+- buffer : A pointer to an iio_buffer structure
+- src : A pointer to the memory area where the sequential data will be read from
+- len : The length of the memory area, in bytes
 
 # Returns
-    The number of bytes actually multiplexed
+- The number of bytes actually multiplexed
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga350e81855764c159c6aefa12fb78e1c2)
 """

@@ -1,12 +1,12 @@
 ```@meta
-CurrentModule = PlutoSDR
+CurrentModule = AdalmPluto
 ```
 
-# PlutoSDR
+# AdalmPluto
 
 ```@index
 ```
 
 ```@autodocs
-Modules = [PlutoSDR]
+Modules = [AdalmPluto libIIO_jl]
 ```

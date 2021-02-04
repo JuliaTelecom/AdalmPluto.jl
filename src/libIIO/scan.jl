@@ -4,10 +4,10 @@
 Get a description of a discovered context.
 
 # Parameters
-- `context::Ptr{iio_context_info}`: A pointer to an iio_context_info structure.
+- `context::Ptr{iio_context_info}`: A pointer to an `iio_context_info` structure.
 
 # Returns
-    A pointer to a static NULL-terminated string
+- A pointer to a static NULL-terminated string
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#ga885558697d0e4dad11a4a5b6f5fbc4d6)
 """
@@ -25,10 +25,10 @@ end
 Get the URI of a discovered context.
 
 # Parameters
-- `context::Ptr{iio_context_info}`: A pointer to an iio_context_info structure.
+- `context::Ptr{iio_context_info}`: A pointer to an `iio_context_info` structure.
 
 # Returns
-    A pointer to a static NULL-terminated string
+- A pointer to a static NULL-terminated string
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#ga6a142a62112a0f84370d22facb2f2a37)
 """
@@ -46,7 +46,7 @@ end
 Free a context info list.
 
 # Parameters
-- `ptr_context::Ptr{Ptr{iio_context_info}}` : A pointer to a 'const struct iio_context_info *' typed variable.
+- `ptr_context::Ptr{Ptr{iio_context_info}}` : A pointer to a `const struct iio_context_info *` typed variable.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#ga4e618c6efb5a62e04a664f53f1b80d99)
 """
@@ -68,8 +68,8 @@ Create a scan block.
 - `flags::UInt32` : Unused for now. Set to 0.
 
 # Returns
-    On success, a pointer to a iio_scan_block structure
-    On failure, NULL is returned and errno is set appropriately
+- On success, a pointer to a `iio_scan_block` structure
+- On failure, NULL is returned and errno is set appropriately
 
 Introduced in version 0.20.
 
@@ -94,8 +94,8 @@ Create a scan context.
 - `flags::UInt32` : Unused for now. Set to 0.
 
 # Returns
-    On success, a pointer to a iio_scan_context structure
-    On failure, NULL is returned and errno is set appropriately
+- On success, a pointer to a `iio_scan_context` structure
+- On failure, NULL is returned and errno is set appropriately
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#gaa333dd2e410a2769cf5685019185d99c)
 """
@@ -114,9 +114,10 @@ end
 Destroy the given scan block.
 
 # Parameters
-- `block::Ptr{iio_scan_block}` : A pointer to an iio_scan_block structure
+- `block::Ptr{iio_scan_block}` : A pointer to an `iio_scan_block` structure
 
-NOTE: After that function, the iio_scan_block pointer shall be invalid.
+# NOTE
+After that function, the `iio_scan_block` pointer shall be invalid.
 
 Introduced in version 0.20.
 
@@ -133,16 +134,15 @@ end
 """
     C_iio_scan_block_get_info(scan_block, index)
 
-Get the iio_context_info for a particular context.
+Get the `iio_context_info` for a particular context.
 
 # Parameters
-- `scan_block::Ptr{iio_scan_block}` : A pointer to an iio_scan_block structure
+- `scan_block::Ptr{iio_scan_block}` : A pointer to an `iio_scan_block` structure
 - `index::UInt32` : The index corresponding to the context.
 
 # Returns
-    A pointer to the iio_context_info for the context
-    On success, a pointer to the specified iio_context_info
-    On failure, NULL is returned and errno is set appropriately
+- On success, a pointer to the specified `iio_context_info`
+- On failure, NULL is returned and errno is set appropriately
 
 Introduced in version 0.20.
 
@@ -163,11 +163,11 @@ end
 Enumerate available contexts via scan block.
 
 # Parameters
-- `scan_block::Ptr{iio_scan_block}` : A pointer to a iio_scan_block structure.
+- `scan_block::Ptr{iio_scan_block}` : A pointer to a `iio_scan_block` structure.
 
 # Returns
-    On success, the number of contexts found.
-    On failure, a negative error number.
+- On success, the number of contexts found.
+- On failure, a negative error number.
 
 Introduced in version 0.20.
 
@@ -188,9 +188,10 @@ end
 Destroy the given scan context.
 
 # Parameters
-- `scan_context::Ptr{iio_scan_context}` : A pointer to an iio_scan_context structure
+- `scan_context::Ptr{iio_scan_context}` : A pointer to an `iio_scan_context` structure
 
-NOTE: After that function, the iio_scan_context pointer shall be invalid.
+# NOTE
+After that function, the `iio_scan_context pointer` shall be invalid.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#ga649d7821636c744753067e8301a84e6d)
 """
@@ -208,12 +209,12 @@ end
 Enumerate available contexts.
 
 # Parameters
-- `scan_context::Ptr{iio_scan_context}` : A pointer to an iio_scan_context structure
-- `context_info::Ref{Ptr{Ptr{iio_context_info}}}` : A pointer to a 'const struct iio_context_info **' typed variable. The pointed variable will be initialized on success.
+- `scan_context::Ptr{iio_scan_context}` : A pointer to an `iio_scan_context` structure
+- `context_info::Ref{Ptr{Ptr{iio_context_info}}}` : A pointer to a `const struct iio_context_info **` typed variable. The pointed variable will be initialized on success.
 
 # Returns
-    On success, the number of contexts found.
-    On failure, a negative error number.
+- On success, the number of contexts found.
+- On failure, a negative error number.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Scan.html#ga5d364d8d008bdbfe5486e6329d06257f)
 """

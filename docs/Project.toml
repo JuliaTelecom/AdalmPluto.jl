@@ -1,3 +1,4 @@
 [deps]
+AdalmPluto = "af34ca7c-e544-47d5-a6fe-72495f08728e"
 Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
-PlutoSDR = "af34ca7c-e544-47d5-a6fe-72495f08728e"
+LiveServer = "16fef848-5104-11e9-1b77-fb7a48bbb589"

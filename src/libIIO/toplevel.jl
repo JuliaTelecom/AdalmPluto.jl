@@ -7,8 +7,8 @@ Retrieve the name of a given backend.
 - `index::UInt32` : The index corresponding to the attribute
 
 # Returns
-    On success, a pointer to a static NULL-terminated string
-    If the index is invalid, NULL is returned
+- On success, a pointer to a static NULL-terminated string
+- If the index is invalid, NULL is returned
 
 Introduced in version 0.9.
 
@@ -29,7 +29,7 @@ end
 Get the number of available backends.
 
 # Returns
-    The number of available backends
+- The number of available backends
 
 Introduced in version 0.9.
 
@@ -51,7 +51,7 @@ Check if the specified backend is available.
 - `backend::String` : The name of the backend to query
 
 # Returns
-    True if the backend is available, false otherwise
+- True if the backend is available, false otherwise
 
 Introduced in version 0.9.
 

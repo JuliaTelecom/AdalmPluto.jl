@@ -110,6 +110,7 @@ end
 
 Layout :
 
+`
 PlutoSDR
 +-- ctx::Ptr{iio_context}
 |
@@ -181,6 +182,7 @@ PlutoSDR
 |   +-- released::Bool
 |
 +-- released::Bool
+`
 
 """
 mutable struct PlutoSDR
@@ -206,8 +208,7 @@ Returns a device URI.
 # Returns
 - `uri::String` : the device URI.
 
-# C equivalent
-https://analogdevicesinc.github.io/libiio/master/libiio/iio-monitor_8c-example.html#_a15
+[C equivalent](https://analogdevicesinc.github.io/libiio/master/libiio/iio-monitor_8c-example.html#_a15)
 """
 function scan(backend::String, deviceIndex=1, doPrint=true)
     # Check if backend is available and create scan context

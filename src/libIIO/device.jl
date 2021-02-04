@@ -8,10 +8,11 @@ Read the content of the given device-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, the number of bytes written to the buffer and the attribute value as a `String`.
-    On error, a negative errno code is returned along an empty `String`.
+- On success, the number of bytes written to the buffer and the attribute value as a `String`.
+- On error, a negative errno code is returned along an empty `String`.
 
-NOTE:By passing NULL as the "attr" argument to iio_device_attr_read, it is now possible to read all of the attributes of a device.
+# NOTE
+By passing NULL as the "attr" argument to iio_device_attr_read, it is now possible to read all of the attributes of a device.
 
 The buffer is filled with one block of data per attribute of the device, by the order they appear in the iio_device structure.
 
@@ -39,15 +40,16 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Read the content of all device-specific attributes.
 
 # Parameters
-    dev	A pointer to an iio_device structure
-    cb	A pointer to a callback function
-    data	A pointer that will be passed to the callback function
+- dev : A pointer to an iio_device structure
+- cb : A pointer to a callback function
+- data : A pointer that will be passed to the callback function
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
-NOTE: This function is especially useful when used with the network backend, as all the device-specific attributes are read in one single command.
+# NOTE
+This function is especially useful when used with the network backend, as all the device-specific attributes are read in one single command.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga5b1fef1333c4835942384b661f148b36)
 """
@@ -65,8 +67,8 @@ Read the content of the given device-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(0, value::Bool)` is returned.
-    On error, `(errno, value::Bool)` is returned, where errno is a negative error code. `value` should be discarded.
+- On success, `(0, value::Bool)` is returned.
+- On error, `(errno, value::Bool)` is returned, where errno is a negative error code. `value` should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga96364b7c7097bb8e4656924ea896a502)
 """
@@ -90,8 +92,8 @@ Read the content of the given device-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(0, value::Float64)` is returned.
-    On error, `(errno, value::Float64)` is returned, where errno is a negative error code. `value` should be discarded.
+- On success, `(0, value::Float64)` is returned.
+- On error, `(errno, value::Float64)` is returned, where errno is a negative error code. `value` should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gab1b150a5bfa7b1ab7fd76c538e15e4da)
 """
@@ -115,8 +117,8 @@ Read the content of the given device-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, `(0, value::Int64)` is returned.
-    On error, `(errno, value::Int64)` is returned, where errno is a negative error code. `value` should be discarded.
+- On success, `(0, value::Int64)` is returned.
+- On error, `(errno, value::Int64)` is returned, where errno is a negative error code. `value` should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga0f7b5d21a4e40efac68e1ece44d7ba74)
 """
@@ -141,10 +143,11 @@ Set the value of the given device-specific attribute.
 - `value::String`           : A NULL-terminated string to set the attribute to
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
-NOTE:By passing NULL as the "attr" argument to iio_device_attr_write, it is now possible to write all of the attributes of a device.
+# NOTE
+By passing NULL as the "attr" argument to `iio_device_attr_write`, it is now possible to write all of the attributes of a device.
 
 The buffer must contain one block of data per attribute of the device, by the order they appear in the iio_device structure.
 
@@ -170,13 +173,13 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Set the values of all device-specific attributes.
 
 # Parameters
-    dev	A pointer to an iio_device structure
-    cb	A pointer to a callback function
-    data	A pointer that will be passed to the callback function
+- dev : A pointer to an iio_device structure
+- cb : A pointer to a callback function
+- data : A pointer that will be passed to the callback function
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gadfbbfafabc32d6954d3f3dfcda957735)
 """
@@ -195,8 +198,8 @@ Set the value of the given device-specific attribute.
 - `value::Bool`             : A bool value to set the attribute to
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga9f53f9d1c3dc9f87191943fcbd1a7324)
 """
@@ -219,8 +222,8 @@ Set the value of the given device-specific attribute.
 - `value::Float64`          : A double value to set the attribute to
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gacdaf529f12b46ba2a5290bbc590c8b9e)
 """
@@ -243,8 +246,8 @@ Set the value of the given device-specific attribute.
 - `value::Int64`            : A long long value to set the attribute to
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga3fcba684f6b07d3f6295759bb788c4d2)
 """
@@ -267,8 +270,8 @@ Set the value of the given device-specific attribute.
 - `value`                   : A pointer to the data to be written (must be able to convert into a `Ptr{Cuchar}`)
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga30829a67dcdffc902c4ba6801233e79a)
 """
@@ -291,10 +294,11 @@ Read the content of the given buffer-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, (number_of_bytes, value::String) is returned, where number of bytes should be the length of the string.
-    On error, (errno, "") is returned, where errno is a negative error code.
+- On success, (number_of_bytes, value::String) is returned, where number of bytes should be the length of the string.
+- On error, (errno, "") is returned, where errno is a negative error code.
 
-NOTE:By passing NULL as the "attr" argument to iio_device_buffer_attr_read, it is now possible to read all of the attributes of a device.
+# NOTE
+By passing NULL as the "attr" argument to `iio_device_buffer_attr_read`, it is now possible to read all of the attributes of a device.
 
 The buffer is filled with one block of data per attribute of the buffer, by the order they appear in the iio_device structure.
 
@@ -322,15 +326,16 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Read the content of all buffer-specific attributes.
 
 # Parameters
-    dev	A pointer to an iio_device structure
-    cb	A pointer to a callback function
-    data	A pointer that will be passed to the callback function
+- dev : A pointer to an iio_device structure
+- cb : A pointer to a callback function
+- data : A pointer that will be passed to the callback function
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
-NOTE: This function is especially useful when used with the network backend, as all the buffer-specific attributes are read in one single command.
+# NOTE
+This function is especially useful when used with the network backend, as all the buffer-specific attributes are read in one single command.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gaae5bf33ad1bd1b14155eab4a018c576c)
 """
@@ -348,8 +353,8 @@ Read the content of the given buffer-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, (0, value::Bool) is returned.
-    On error, (errno, value::Bool) is returned, where errno is a negative error code. `value` should be discarded.
+- On success, (0, value::Bool) is returned.
+- On error, (errno, value::Bool) is returned, where errno is a negative error code. `value` should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga92ee863b94e6f841efec3919f57f5193)
 """
@@ -373,8 +378,8 @@ Read the content of the given buffer-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, (0, value::Float64) is returned.
-    On error, (errno, value::Float64) is returned, where errno is a negative error code. `value` should be discarded.
+- On success, (0, value::Float64) is returned.
+- On error, (errno, value::Float64) is returned, where errno is a negative error code. `value` should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga44952198b73ff6b0c0c0b53d3cd6d1bd)
 """
@@ -398,8 +403,8 @@ Read the content of the given buffer-specific attribute.
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, (0, value::Int64) is returned.
-    On error, (errno, value::Int64) is returned, where errno is a negative error code. `value` should be discarded.
+- On success, (0, value::Int64) is returned.
+- On error, (errno, value::Int64) is returned, where errno is a negative error code. `value` should be discarded.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gae5b9be890edb372d3e30a14ce1c79874)
 """
@@ -424,10 +429,11 @@ Set the value of the given buffer-specific attribute.
 - `value::String`           : A NULL-terminated string to set the attribute to
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
-NOTE:By passing NULL as the "attr" argument to iio_device_buffer_attr_write, it is now possible to write all of the attributes of a device.
+# NOTE
+By passing NULL as the "attr" argument to `iio_device_buffer_attr_write`, it is now possible to write all of the attributes of a device.
 
 The buffer must contain one block of data per attribute of the buffer, by the order they appear in the iio_device structure.
 
@@ -453,15 +459,16 @@ THIS IS A PLACEHOLDER. THE DOCUMENTATION BELOW IS ONLY A COPY/PASTE OF THE C DOC
 Set the values of all buffer-specific attributes.
 
 # Parameters
-    dev	A pointer to an iio_device structure
-    cb	A pointer to a callback function
-    data	A pointer that will be passed to the callback function
+- dev : A pointer to an iio_device structure
+- cb : A pointer to a callback function
+- data : A pointer that will be passed to the callback function
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
-NOTE: This function is especially useful when used with the network backend, as all the buffer-specific attributes are written in one single command.
+# NOTE
+This function is especially useful when used with the network backend, as all the buffer-specific attributes are written in one single command.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga3d77bb90c22eb1d0a13805bf69def068)
 """
@@ -480,8 +487,8 @@ Set the value of the given buffer-specific attribute.
 - `value::Bool`             : A bool value to set the attribute to
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga3fad39798014287c24c36bac4a67648e)
 """
@@ -504,8 +511,8 @@ Set the value of the given buffer-specific attribute.
 - `value::Float64`          : A double value to set the attribute to
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga10d47af8de4ad1f9dc4b63ce0aa0ff7d)
 """
@@ -528,8 +535,8 @@ Set the value of the given buffer-specific attribute.
 - `value::Int64`            : A long long value to set the attribute to
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gac05869aa707121328dd72cdad10cedf2)
 """
@@ -552,8 +559,8 @@ Set the value of the given buffer-specific attribute.
 - `value`                   : A pointer to the data to be written (must be able to convert into a `Ptr{Cuchar}`)
 
 # Returns
-    On success, the number of bytes written
-    On error, a negative errno code is returned
+- On success, the number of bytes written
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga982e2bcb890aab88eabf833a00ba841a)
 """
@@ -576,11 +583,12 @@ Try to find a device-specific attribute by its name.
 - `name::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, a NULL-terminated string.
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, also throws an error :D
+- On success, a NULL-terminated string.
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, also throws an error :D
 
-NOTE: This function is useful to detect the presence of an attribute.
+# NOTE
+This function is useful to detect the presence of an attribute.
 It can also be used to retrieve the name of an attribute as a pointer to a static string from a dynamically allocated string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gafcbece1ac6260b06bcdf02d9eb55e5fd)
@@ -605,11 +613,12 @@ Try to find a buffer-specific attribute by its name.
 - `name::String`            : A NULL-terminated string corresponding to the name of the attribute
 
 # Returns
-    On success, a NULL-terminated string.
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, also throws an error :D
+- On success, a NULL-terminated string.
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, also throws an error :D
 
-NOTE: This function is useful to detect the presence of an attribute.
+# NOTE
+This function is useful to detect the presence of an attribute.
 It can also be used to retrieve the name of an attribute as a pointer to a static string from a dynamically allocated string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga58baa15da06b2d497fb0334f35264240)
@@ -635,9 +644,9 @@ Try to find a channel structure by its name of ID.
 - `isOutput::Bool`          : True if the searched channel is output, False otherwise
 
 # Returns
-    On success, a pointer to an iio_channel structure
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, returns NULL.
+- On success, a pointer to an iio_channel structure
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, returns NULL.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gaffc6086189ba801ab5e95341d68f882b)
 """
@@ -660,9 +669,9 @@ Get the device-specific attribute present at the given index.
 - `index::UInt32`           : The index corresponding to the attribute
 
 # Returns
-    On success, a NULL-terminated string.
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, also throws an error :D
+- On success, a NULL-terminated string.
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, also throws an error :D
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga70b03d4cb3cc3c4fb1b6451764c8ccec)
 """
@@ -685,7 +694,7 @@ Enumerate the device-specific attributes of the given device.
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    The number of device-specific attributes found
+- The number of device-specific attributes found
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga36c2d0f703a803f44a578bc83fdab6a0)
 """
@@ -707,9 +716,9 @@ Get the buffer-specific attribute present at the given index.
 - `index::UInt32`           : The index corresponding to the attribute
 
 # Returns
-    On success, a NULL-terminated string.
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, also throws an error :D
+- On success, a NULL-terminated string.
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, also throws an error :D
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga7225b9df06559012d549d627fb451c2a)
 """
@@ -731,7 +740,7 @@ Enumerate the buffer-specific attributes of the given device.
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    The number of buffer-specific attributes found
+- The number of buffer-specific attributes found
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga6d4bd3c4f9791c706d9baa4454e0f1d3)
 """
@@ -753,9 +762,9 @@ Get the channel present at the given index.
 - `index::UInt32`           : The index corresponding to the channel
 
 # Returns
-    On success, a pointer to an iio_channel structure
-    On failure, if the assertions are enabled, throws an error.
-    On failure, if the assertions are disabled, returns NULL.
+- On success, a pointer to an iio_channel structure
+- On failure, if the assertions are enabled, throws an error.
+- On failure, if the assertions are disabled, returns NULL.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga67289d735b7d8e1ed12ae0ea642bd1ac)
 """
@@ -777,7 +786,7 @@ Retrieve a pointer to the iio_context structure.
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    A pointer to an iio_context structure
+- A pointer to an iio_context structure
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gae10ff440f64dac52b4229eb3f2ebea76)
 """
@@ -798,7 +807,7 @@ Retrieve a pointer to the iio_context structure.
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    A pointer to an iio_context structure
+- A pointer to an iio_context structure
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gacc7d7b43ca5a1e228ef4c3a4952195fd)
 """
@@ -819,7 +828,7 @@ Retrieve a previously associated pointer of an iio_device structure.
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    The pointer previously associated if present, or NULL
+- The pointer previously associated if present, or NULL
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga87cff8d90e1a68e73410e4a527cc5334)
 """
@@ -841,7 +850,7 @@ Retrieve the device ID (e.g. iio:device0)
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    A NULL-terminated string
+- A NULL-terminated string
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga9e6610c3dd7cc45bebcc7ed7a1b064c6)
 """
@@ -862,9 +871,10 @@ Retrieve the device name (e.g. xadc)
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    A NULL-terminated string
+- A NULL-terminated string
 
-NOTE: if the device has no name, NULL is returned.
+# NOTE
+If the device has no name, NULL is returned.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga711666b3b3b6314fbe7e592b4632ab85)
 """
@@ -884,12 +894,10 @@ Retrieve the trigger of a given device.
 
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
-    dev	A pointer to an iio_device structure
-    trigger	a pointer to a pointer of an iio_device structure. The pointed pointer will be set to the address of the iio_device structure corresponding to the associated trigger device.
 
 # Returns
-    On success, `(0, trigger::Ptr{iio_device})` is returned.
-    On error, `(errno, NULL)` is returned, where errno is a negative error code.
+- On success, `(0, trigger::Ptr{iio_device})` is returned.
+- On error, `(errno, NULL)` is returned, where errno is a negative error code.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gae3ce1d7385ca02a9f6c36768fa41c610)
 """
@@ -912,7 +920,7 @@ Return True if the given device is a trigger.
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 
 # Returns
-    True if the device is a trigger, False otherwise
+- True if the device is a trigger, False otherwise
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga7e3e5dee1ac8c082de038829c88edda8)
 """
@@ -957,8 +965,8 @@ This function allows to change the number of buffers on kernel side.
 - `nb_buffers::UInt32`      : The number of buffers
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga8ad2357c4caf7afc778060a08e6e2209)
 """
@@ -980,8 +988,8 @@ Associate a trigger to a given device.
 - `trigger::Ptr{iio_device}` : a pointer to the iio_device structure corresponding to the trigger that should be associated.
 
 # Returns
-    On success, 0 is returned
-    On error, a negative errno code is returned
+- On success, 0 is returned
+- On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga3b8d1e621357f0755925d98555f53d9a)
 """
