@@ -657,6 +657,45 @@ function updateCarrierFreq!(pluto::PlutoSDR, value::Int64)
 end
 
 """
+    updateSamplingRate!(pluto, value)
+
+Changes the sampling rate. Prints the new effective sampling rate.
+
+# Arguments
+- `pluto::PlutoSDR` : the radio to modify.
+- `value::Int64` : the new sampling rate.
+
+# Returns
+- `errno::Int` : 0 or a negative error code.
+"""
+function updateSamplingRate!(pluto::PlutoSDR, value::Int64)
+    # set the sampling rate for RX
+    errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "sampling_frequency", value);
+    if (errno < 0); return errno; end;
+
+    # store the requested configuration and effective configuration for RX
+    effectiveSamplingRate = getEffectiveCfg(pluto.rx)[1];
+    @info "New RX sampling rate : $effectiveSamplingRate ($value)"
+    if (effectiveSamplingRate != value); @warnrx "Effective sampling rate ≠ Requested sampling rate"; end;
+    pluto.rx.cfg.samplingRate = value;
+    pluto.rx.effectiveSamplingRate = effectiveSamplingRate;
+
+    # set the sampling rate for TX
+    errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn, "sampling_frequency", value);
+    if (errno < 0); return errno; end;
+
+    # store the requested configuration and effective configuration for TX
+    effectiveSamplingRate = getEffectiveCfg(pluto.tx)[1];
+    @info "New TX sampling rate : $effectiveSamplingRate ($value)"
+    if (effectiveSamplingRate != value); @warntx "Effective sampling rate ≠ Requested sampling rate"; end;
+    pluto.tx.cfg.samplingRate = value;
+    pluto.tx.effectiveSamplingRate = effectiveSamplingRate;
+
+    # not actually errno because it's equal to the number of bytes written
+    return 0;
+end
+
+"""
     recv(pluto, nbSamples)
 
 Reads nbSamples from the Julia buffer. If there are less than nbSamples samples in the Julia buffer,
