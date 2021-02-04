@@ -1,6 +1,7 @@
 # --- All libIIO functions wrapped --- #
 
 module AdalmPluto
+# TODO: unit testing
 
 using Reexport;
 
@@ -202,6 +203,9 @@ Returns a device URI.
 - `infoIndex::Integer=1` : the device index.
 - `doPrint::Bool=true` : toggles console printing of the uri.
 
+# Returns
+- `uri::String` : the device URI.
+
 # C equivalent
 https://analogdevicesinc.github.io/libiio/master/libiio/iio-monitor_8c-example.html#_a15
 """
@@ -239,6 +243,12 @@ end
     createContext(uri)
 
 Returns the `iio_context` corresponding the the provided uri. Throws an error if no devices are found in the context.
+
+# Arguments
+- `uri::String` : the radio URI to get the context from.
+
+# Returns
+- `context::Ptr{iio_context}` : the context for the given URI.
 """
 function createContext(uri::String)
     context = C_iio_create_context_from_uri(uri);
@@ -251,6 +261,13 @@ end
     findTRXDevices(context)
 
 Returns `txDevice::Ptr{iio_device}, rxDevice::Ptr{iio_device}` from the given context.
+
+# Arguments
+- `context::Ptr{iio_context}` : the IIO context to get the TX and RX devices from.
+
+# Returns
+- `txDevice::Ptr{iio_device}` : a pointer to the TX C iio_device structure.
+- `rxDevice::Ptr{iio_device}` : a pointer to the RX C iio_device structure.
 """
 function findTRXDevices(context::Ptr{iio_context})
     txDevice = C_iio_context_find_device(context, TX_DEVICE_NAME);
@@ -267,6 +284,10 @@ Returns `txChannel::Ptr{iio_channel}, rxChannel::Ptr{iio_channel}` from the give
 - `context::Ptr{iio_context}` : the context to get the channels from.
 - `txID::Integer=0` : the tx channel number (ex : 0 for tx channel "voltage0").
 - `rxID::Integer=0` : the rx channel number (ex : 0 for rx channel "voltage0").
+
+# Returns
+- `txChannel::Ptr{iio_channel}` : a pointer to the TX C iio_channel structure.
+- `rxChannel::Ptr{iio_channel}` : a pointer to the RX C iio_channel structure.
 """
 function findTRXChannels(context::Ptr{iio_context}, txID=0, rxID=0)
     device = C_iio_context_find_device(context, PHY_DEVICE_NAME);
@@ -285,6 +306,10 @@ Returns `txLoChannel::Ptr{iio_channel}, rxLoChannel::Ptr{iio_channel}` from the 
 - `context::Ptr{iio_context}` : the context to get the channels from.
 - `txLoID::Integer=1` : the tx lo channel number (ex : 1 for tx lo channel "altvoltage1").
 - `rxLoID::Integer=0` : the rx lo channel number (ex : 0 for rx lo channel "altvoltage0").
+
+# Returns
+- `txLoChannel::Ptr{iio_channel}` : a pointer to the TX Lo C iio_channel structure.
+- `rxLoChannel::Ptr{iio_channel}` : a pointer to the RX Lo C iio_channel structure.
 """
 function findLoChannels(context::Ptr{iio_context}, txLoID=1, rxLoID=0)
     device = C_iio_context_find_device(context, PHY_DEVICE_NAME);
@@ -304,6 +329,12 @@ Returns the configured channels.
 - `context::Ptr{iio_context}` : the context to get the channels from.
 - `txCfg::ChannelCfg` : the tx configuration (port / bandwidth / sampling rate / frequency).
 - `rxCfg::ChannelCfg` : the rx configuration (port / bandwidth / sampling rate / frequency).
+
+# Returns
+- `txChannel::Ptr{iio_channel}` : a pointer to the configured TX C iio_channel structure.
+- `rxChannel::Ptr{iio_channel}` : a pointer to the configured RX C iio_channel structure.
+- `txLoChannel::Ptr{iio_channel}` : a pointer to the configured TX Lo C iio_channel structure.
+- `rxLoChannel::Ptr{iio_channel}` : a pointer to the configured RX Lo C iio_channel structure.
 """
 function cfgChannels(context::Ptr{iio_context}, txCfg::ChannelCfg, rxCfg::ChannelCfg)
     txChannel, rxChannel = findTRXChannels(context);
@@ -325,6 +356,12 @@ Returns the configured channels.
 - `rxLoChannel::Ptr{iio_channel}` : the rx lo channel.
 - `txCfg::ChannelCfg` : the tx configuration (port / bandwidth / sampling rate / frequency).
 - `rxCfg::ChannelCfg` : the rx configuration (port / bandwidth / sampling rate / frequency).
+
+# Returns
+- `txChannel::Ptr{iio_channel}` : a pointer to the configured TX C iio_channel structure.
+- `rxChannel::Ptr{iio_channel}` : a pointer to the configured RX C iio_channel structure.
+- `txLoChannel::Ptr{iio_channel}` : a pointer to the configured TX Lo C iio_channel structure.
+- `rxLoChannel::Ptr{iio_channel}` : a pointer to the configured RX Lo C iio_channel structure.
 """
 function cfgChannels(
     txChannel::Ptr{iio_channel},
@@ -357,6 +394,10 @@ Returns `IChannel::Ptr{iio_channel}, QChannel::Ptr{iio_channel}` from the given 
 - `iID::String` : identification string for the I channel (ex : "voltage0").
 - `qID::String` : identification string for the Q channel (ex : "voltage1").
 - `isOutput::Bool` : whether the IQ channels are outputs.
+
+# Returns
+- `IChannel::Ptr{iio_channel}` : the I channel.
+- `QChannel::Ptr{iio_channel}` : the Q channel.
 """
 function findIQChannels(device::Ptr{iio_device}, iID::String, qID::String, isOutput::Bool)
     IChannel = C_iio_device_find_channel(device, iID, isOutput);
@@ -368,6 +409,13 @@ end
     getEffectiveCfg(wrapper)
 
 Returns the effective sampling rate and carrier frequency of either a `txWrapper` or `rxWrapper`.
+
+# Arguments
+- `wrapper::Union{txWrapper, rxWrapper}` : the wrapper to read the current configuration from.
+
+# Returns
+- `effectiveSamplingRate::Int` : the current sampling rate.
+- `effectiveCarrierFreq::Int` : the current carrier frequency.
 """
 function getEffectiveCfg(wrapper::Union{txWrapper, rxWrapper})
     ret, effectiveSamplingRate = C_iio_channel_attr_read(wrapper.chn, "sampling_frequency");
@@ -414,6 +462,7 @@ function createBuffer(device::Ptr{iio_device}, channel::Ptr{iio_channel}, sample
         zeros(ComplexF32, samplesCount),                    # array to store decoded complex samples
         0);                                                 # number of samples not yet queried
 end
+
 
 # ------------------------ #
 # --- Module functions --- #
@@ -573,9 +622,12 @@ end
 Modifies the pluto RX channel gain control mode.
 Returns an error code < 0 if it doesn't succeed.
 
-Arguments :
-- `pluto::Pluto` : the radio to modify.
+# Arguments
+- `pluto::PlutoSDR` : the radio to modify.
 - `mode::GainMode=DEFAULT` : the new gain mode. DEFAULT ≡ FAST_ATTACK.
+
+# Returns
+- `errno::Int` : 0 or a negative error code.
 """
 function updateGainMode!(pluto::PlutoSDR, mode::GainMode=DEFAULT)
     control_mode = "";
@@ -600,9 +652,12 @@ end
 Changes the gain control mode to manual et sets the given value.
 Prints a warning and returns the error code if it doesn't succeed.
 
-Arguments :
-- `pluto::Pluto` : the radio to modify.
+# Arguments
+- `pluto::PlutoSDR` : the radio to modify.
 - `value::Int64` : the manual gain value.
+
+# Returns
+- `errno::Int` : 0 or a negative error code.
 """
 function updateGain!(pluto::PlutoSDR, value::Int64)
     ret = updateGainMode!(pluto, MANUAL);
