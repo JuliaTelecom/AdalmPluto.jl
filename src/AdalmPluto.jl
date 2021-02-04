@@ -24,6 +24,7 @@ export
     close,
     recv,
     recv!,
+    refillJuliaBufferRX,
     updateGain!,
     updateGainMode!
 ;
@@ -54,12 +55,16 @@ mutable struct ChannelCfg
 end
 
 mutable struct IIO_Buffer
-    ptr::Ptr{iio_buffer};
-    size::Csize_t;
-    sample_size::Cssize_t;
-    first::Ptr{Cuchar};
-    last::Ptr{Cuchar};
-    step::Cssize_t;
+    C_ptr::Ptr{iio_buffer};
+    C_size::Csize_t;
+    C_sample_size::Cssize_t;
+    C_first::Ptr{Cuchar};
+    C_last::Ptr{Cuchar};
+    C_step::Cssize_t;
+    i_raw_samples::Array{UInt8};
+    q_raw_samples::Array{UInt8};
+    samples::Array{ComplexF32};
+    nb_samples::Int;
 end
 
 # --- Rx structures --- #
@@ -126,12 +131,16 @@ PlutoSDR
 |   |
 |   +-- buf::IIO_Buffer
 |   |   |
-|   |   +-- ptr::Ptr{iio_buffer};
-|   |   +-- size::Csize_t;
-|   |   +-- sample_size::Cssize_t;
-|   |   +-- first::Ptr{Cuchar};
-|   |   +-- last::Ptr{Cuchar};
-|   |   +-- step::Cssize_t;
+|   |   +-- C_ptr::Ptr{iio_buffer};         |< Pointer to the C buffer
+|   |   +-- C_size::Csize_t;                |< Size of the C buffer
+|   |   +-- C_sample_size::Cssize_t;        |< Size of a sample in the C buffer
+|   |   +-- C_first::Ptr{Cuchar};           |< Pointer to the first sample in the C buffer
+|   |   +-- C_last::Ptr{Cuchar};            |< Pointer to the last sample in the C buffer
+|   |   +-- C_step::Cssize_t;               |< Distance between to sample pointers in the C buffer
+|   |   +-- i_raw_samples::Array{UInt8}     |< Temporary buffer to store I bytes
+|   |   +-- q_raw_samples::Array{UInt8}     |< Temporary buffer to store Q bytes
+|   |   +-- samples::Array{ComplexF32}      |< Samples stored in a Julia array
+|   |   +-- nb_samples::Int                 |< Number of samples in the Julia array
 |   |
 |   +-- effectiveSamplingRate::Float64
 |   +-- effectiveCarrierFreq::Float64
@@ -155,12 +164,16 @@ PlutoSDR
 |   |
 |   +-- buf::IIO_Buffer
 |   |   |
-|   |   +-- ptr::Ptr{iio_buffer};
-|   |   +-- size::Csize_t;
-|   |   +-- sample_size::Cssize_t;
-|   |   +-- first::Ptr{Cuchar};
-|   |   +-- last::Ptr{Cuchar};
-|   |   +-- step::Cssize_t;
+|   |   +-- C_ptr::Ptr{iio_buffer};         |< Pointer to the C buffer
+|   |   +-- C_size::Csize_t;                |< Size of the C buffer
+|   |   +-- C_sample_size::Cssize_t;        |< Size of a sample in the C buffer
+|   |   +-- C_first::Ptr{Cuchar};           |< Pointer to the first sample in the C buffer
+|   |   +-- C_last::Ptr{Cuchar};            |< Pointer to the last sample in the C buffer
+|   |   +-- C_step::Cssize_t;               |< Distance between to sample pointers in the C buffer
+|   |   +-- i_raw_samples::Array{UInt8}     |< Temporary buffer to store I bytes
+|   |   +-- q_raw_samples::Array{UInt8}     |< Temporary buffer to store Q bytes
+|   |   +-- samples::Array{ComplexF32}      |< Samples decoded and stored in a Julia array
+|   |   +-- nb_samples::Int                 |< Number of samples available in the Julia array
 |   |
 |   +-- effectiveSamplingRate::Float64
 |   +-- effectiveCarrierFreq::Float64
@@ -182,7 +195,7 @@ end
 """
     scan(backend[, infoIndex, doPrint])
 
-Returns a device uri.
+Returns a device URI.
 
 # Arguments
 - `backend::String` : the backend to scan (local, xml, ip, usb).
@@ -377,24 +390,30 @@ end
     createBuffer(device, channel, samplesCount)
 
 Creates a buffer for the provided channel. Returns a wrapper around the buffer with basic info
-(pointer, sample size, first sample, last sample, steps between samples).
+(C pointer, sample size, first sample, last sample, steps between samples, Julia complex samples, number of non-queried Julia complex samples).
 
 # Arguments
 - `device::Ptr{iio_device}` : the device in which the buffer is created.
 - `channel::Ptr{iio_channel}` : the channel from which the buffer will be filled.
 - `samplesCound::UInt` : the size of the buffer in samples.
 
+# Returns
+- `buffer::IIO_Buffer` : a buffer for the given channel with space for samplesCount samples.
 """
 function createBuffer(device::Ptr{iio_device}, channel::Ptr{iio_channel}, samplesCount::UInt)
     sampleSize = C_iio_device_get_sample_size(device);
-    buf = C_iio_device_create_buffer(device, samplesCount, false);
-    first = C_iio_buffer_first(buf, channel);
-    last = C_iio_buffer_end(buf);
-    step = C_iio_buffer_step(buf);
+    buf        = C_iio_device_create_buffer(device, samplesCount, false);
+    first      = C_iio_buffer_first(buf, channel);
+    last       = C_iio_buffer_end(buf);
+    step       = C_iio_buffer_step(buf);
 
-    return IIO_Buffer(buf, samplesCount, sampleSize, first, last, step);
+    return IIO_Buffer(
+        buf, samplesCount, sampleSize, first, last, step,   # values regarding the C buffers
+        zeros(UInt8, (samplesCount * sampleSize) ÷ 2),      # array to store raw I samples
+        zeros(UInt8, (samplesCount * sampleSize) ÷ 2),      # array to store raw Q samples
+        zeros(ComplexF32, samplesCount),                    # array to store decoded complex samples
+        0);                                                 # number of samples not yet queried
 end
-
 
 # ------------------------ #
 # --- Module functions --- #
@@ -403,30 +422,45 @@ end
 """
     openPluto(carrierFreq, samplingRate, bandwidth[, uri, backend])
 
-Creates a PlutoSDR struct and configure the radio to stream the samples.
+Creates a PlutoSDR struct and configures the radio to stream the samples.
 
 # Arguments
 - `carrierFreq::Int` : the carrier frequency for both tx and rx.
 - `samplingRate::Int` : the sampling rate for both tx and rx.
-- `bandwidth::Int` : the bandwidth for both tx and rx.
-- `bufferSize::UInt=1024*1024` : the buffer size in samples.
-- `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
+- `gain::Int` : the analog RX gain.
+
+# Keywords
+- `addr::String="auto"` : the radio address (ex: "usb:1.3.5"). "auto" takes the first uri found for the given backend.
 - `backend::String="usb"` : the backend to scan for the auto uri.
+- `bufferSize::UInt=1024*1024` : the buffer size in samples.
+- `bandwidth::Int` : the bandwidth for both tx and rx.
+
+# Returns
+- `radio::PlutoSDR` : a fully initialized PlutoSDR structure.
 """
-function openPluto(carrierFreq::Int, samplingRate::Int, bandwidth::Int, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
-    return openPluto(
-        ChannelCfg("A", carrierFreq, samplingRate, bandwidth),
-        ChannelCfg("A_BALANCED", carrierFreq, samplingRate, bandwidth),
+function openPluto(
+    carrierFreq::Int, samplingRate::Int, gain::Int, antenna="A;A_BALANCED";
+    addr::String="auto", backend::String="usb", bufferSize::UInt=UInt64(1024*1024), bandwidth::Int=Int(20e6)
+)
+    antenna = split(antenna, ";");
+    if !(length(antenna) == 2)
+        throw(ArgumentError("Couldn't parse antenna ports. Expected syntax: TXport;RXport"));
+    end
+    radio = openPluto(
+        ChannelCfg(antenna[1], carrierFreq, samplingRate, bandwidth),
+        ChannelCfg(antenna[2], carrierFreq, samplingRate, bandwidth),
         bufferSize,
-        uri,
+        addr,
         backend
     );
+    updateGain!(radio, gain);
+    return radio;
 end
 
 """
     openPluto(txCfg, rxCfg[, uri, backend])
 
-Creates a PlutoSDR struct and configure the radio to stream the samples.
+Creates a PlutoSDR struct and configures the radio to stream the samples.
 
 # Arguments
 - `txCfg::ChannelCfg` : the port / bandwidth / sampling rate / carrier frequency for the tx channels.
@@ -434,6 +468,9 @@ Creates a PlutoSDR struct and configure the radio to stream the samples.
 - `bufferSize::UInt=1024*1024` : the buffer size in samples.
 - `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
 - `backend::String="usb"` : the backend to scan for the auto uri.
+
+# Returns
+- `radio::PlutoSDR` : a fully initialized PlutoSDR structure.
 """
 function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
     if uri == "auto"
@@ -581,46 +618,128 @@ function updateGain!(pluto::PlutoSDR, value::Int64)
 end
 
 """
-    recv(pluto)
+    recv(pluto, nbSamples)
 
-Refills the buffers, read them, converts the samples to complex numbers.
-Returns the number of bytes received, the samples as comlex numbers, and the raw i and q samples as UInt8 arrays.
+Reads nbSamples from the Julia buffer. If there are less than nbSamples samples in the Julia buffer,
+the remaining samples are read, the buffer is refilled, and a total of the nbSamples is read.
+Returns a newly allocated `Array{ComplexF32}`.
+
+# Arguments
+- `pluto::PlutoSDR` : the radio to get receive the samples from.
+- `nbSamples::Int` : the number of samples to receive.
+
+# Returns
+- `buffer::Array{ComplexF32}` : an array with nbSamples complex values.
 """
-function recv(pluto::PlutoSDR)
-    buffer_size = UInt(pluto.rx.buf.size * pluto.rx.buf.sample_size ÷ 2);
-    dst_i = zeros(UInt8, buffer_size);
-    dst_q = zeros(UInt8, buffer_size);
-    nbytes, complex_samples = recv!(pluto, dst_i, dst_q);
-    return nbytes, complex_samples, dst_i, dst_q;
+function recv(pluto::PlutoSDR, nbSamples::Int)
+    buffer = zeros(ComplexF32, nbSamples);
+    recv!(buffer, pluto);
+    return buffer;
 end
 
 """
-    recv!(pluto, dst_i, dst_q)
+    recv!(sig, pluto)
 
-Refills the buffers, read them, converts the samples to complex numbers.
-Modifies dst_i and dst_q to store the raw samples.
-Returns the total number of bytes received and an array containing the samples as complex numbers.
+Fills the `sig` input buffer with samples from the Julia buffer. If there are not enough samples in the Julia buffer,
+it is refilled until `sig` is full.
+Returns the number of samples filled or a negative error number.
+
+# Arguments
+- `sig::Array{ComplexF32}` : the buffer to be filled.
+- `pluto::PlutoSDR` : the radio to read the samples from.
 """
-function recv!(pluto::PlutoSDR, dst_i::Array{UInt8}, dst_q::Array{UInt8});
-    nbytes = C_iio_buffer_refill(pluto.rx.buf.ptr);
-    if (nbytes < 0)
-        return nbytes, [];
+function recv!(sig::Array{ComplexF32}, pluto::PlutoSDR)
+    # TODO: make this function somewhat error resilient
+    samplesNeeded = length(sig);
+
+    while (samplesNeeded > 0)
+        # if needed refill the Julia buffer
+        if (pluto.rx.buf.nb_samples == 0)
+            nbNewSamples = refillJuliaBufferRX(pluto);
+            #  @inforx "$nbNewSamples new samples in the Julia RX buffer."
+        end
+        # TODO: unfuck the indexes (refill the Julia buffer in an appropriate order)
+        samplesQueried = min(samplesNeeded, pluto.rx.buf.nb_samples);
+        # assuming the Julia buffer is filled until the end (which it should)
+        sig[(end - samplesNeeded + 1):(end - samplesNeeded + samplesQueried)] =
+            pluto.rx.buf.samples[(end - pluto.rx.buf.nb_samples + 1):(end - pluto.rx.buf.nb_samples + samplesQueried)];
+        pluto.rx.buf.nb_samples -= samplesQueried;
+        samplesNeeded -= samplesQueried;
     end
-    # demux and convert samples, loads into a julia array
-    # TODO: find out if the arrays are smaller than the buffers, does multiple iio_channel_read calls read the whole buffer?
-    nbytes_i = C_iio_channel_read!(pluto.rx.iio.rx0_i, pluto.rx.buf.ptr, dst_i);
-    nbytes_q = C_iio_channel_read!(pluto.rx.iio.rx0_q, pluto.rx.buf.ptr, dst_q);
-    # TODO: find out if it's needed or those values are constants
-    #  pluto.rx.buf.first = C_iio_buffer_first(pluto.rx.buf.ptr, pluto.rx.iio.rx0_i);
-    #  pluto.rx.buf.last = C_iio_buffer_end(pluto.rx.buf.ptr);
-    #  pluto.rx.buf.step = C_iio_buffer_step(pluto.rx.buf.ptr);
 
-    bytes_per_value = div(pluto.rx.buf.step, 2); # i and q
-    utype, type, utype_norm, type_norm = nbytesToType(bytes_per_value); # get the appropriate types and their max values
-    # interleave I and Q channels, reinterpret as Complex, "normalize" so that real and imaginary part don't exceed 1
-    res = reinterpret(Complex{type}, [dst_i dst_q]'[:]) / Float32(type_norm);
-
-    return nbytes_i + nbytes_q, res;
+    return length(sig);
 end
+
+"""
+    refillJuliaBufferRX(pluto)
+
+Refills the radio buffer, decode the samples into `ComplexF32` values, and store those values in the `pluto` structure.
+To access those samples : `pluto.rx.buf.samples`.
+
+# Arguments
+- `pluto::PlutoSDR` : the radio to receive the samples from, and the structure storing those samples.
+
+# Returns
+- `nbSamples::Int` : the number of samples stored into the Julia buffer.
+"""
+function refillJuliaBufferRX(pluto::PlutoSDR)
+    nbytes = C_iio_buffer_refill(pluto.rx.buf.C_ptr);
+    if (nbytes < 0)
+        return nbytes;
+    end
+    # intermediary buffers from which complex values are computed
+    nbytes_i = C_iio_channel_read!(pluto.rx.iio.rx0_i, pluto.rx.buf.C_ptr, pluto.rx.buf.i_raw_samples);
+    nbytes_q = C_iio_channel_read!(pluto.rx.iio.rx0_q, pluto.rx.buf.C_ptr, pluto.rx.buf.q_raw_samples);
+
+    # find the appropriate types and their max values for normalization
+    bytes_per_value = pluto.rx.buf.C_step ÷ 2;
+    utype, type, utype_norm, type_norm = nbytesToType(bytes_per_value);
+
+    pluto.rx.buf.samples = reinterpret(Complex{type}, [pluto.rx.buf.i_raw_samples pluto.rx.buf.q_raw_samples]'[:]) / Float32(type_norm);
+    pluto.rx.buf.nb_samples = (nbytes_i + nbytes_q) ÷ pluto.rx.buf.C_step;
+
+    return pluto.rx.buf.nb_samples;
+end
+
+
+##
+# This function is significantly slower than the one above despite using less arrays and doing stuff manually.
+# It is kept here to remind me why the weird interleaving of arrays is still my best solution.
+##
+# function refillJuliaBufferRX_ButItsSlower(pluto::PlutoSDR)
+#     nbytes_C = C_iio_buffer_refill(pluto.rx.buf.C_ptr);
+#     #  nbytes_Julia = C_iio_channel_read!(pluto.rx.iio.chn, pluto.rx.buf.C_ptr, pluto.rx.buf.raw_samples); # doesn't work ?
+#
+#     pluto.rx.buf.C_first = C_iio_buffer_first(pluto.rx.buf.C_ptr, pluto.rx.iio.rx0_i);
+#     pluto.rx.buf.C_last  = C_iio_buffer_end(pluto.rx.buf.C_ptr);
+#     pluto.rx.buf.C_step  = C_iio_buffer_step(pluto.rx.buf.C_ptr);
+#
+#     format = unsafe_load(ccall(
+#         (:iio_channel_get_data_format, libIIO_jl.libIIO),
+#         Ptr{iio_data_format}, (Ptr{iio_channel},),
+#         pluto.rx.iio.rx0_q
+#     ));
+#
+#     src_ptr = C_iio_buffer_first(pluto.rx.buf.C_ptr, pluto.rx.iio.rx0_i);
+#     dst_ptr = pointer(pluto.rx.buf.raw_samples, 1);
+#     len = Int64(format.length / 8 * format.repeat);
+#
+#     foreach(src_ptr:pluto.rx.buf.C_step:pluto.rx.buf.C_last-1) do src_ptr
+#         ccall(
+#             (:iio_channel_convert, libIIO_jl.libIIO),
+#             Cvoid, (Ptr{iio_channel}, Ptr{Cvoid}, Ptr{Cvoid}),
+#             pluto.rx.iio.chn, dst_ptr, src_ptr
+#         );
+#         dst_ptr += len;
+#     end
+#
+#     bytes_per_value = pluto.rx.buf.C_step ÷ 2;
+#     utype, type, utype_norm, type_norm = nbytesToType(bytes_per_value);
+#
+#     pluto.rx.buf.samples = reinterpret(Complex{type}, pluto.rx.buf.raw_samples) / Float32(type_norm);
+#     pluto.rx.buf.nb_samples = pluto.rx.buf.C_size;
+#
+#     return pluto.rx.buf.nb_samples;
+# end
 
 end
