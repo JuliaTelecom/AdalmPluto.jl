@@ -558,8 +558,8 @@ function close(pluto::PlutoSDR)
         C_iio_channel_disable(pluto.rx.iio.rx0_q);
         C_iio_channel_disable(pluto.tx.iio.tx0_i);
         C_iio_channel_disable(pluto.tx.iio.tx0_q);
-        C_iio_buffer_destroy(pluto.rx.buf.ptr);
-        C_iio_buffer_destroy(pluto.tx.buf.ptr);
+        C_iio_buffer_destroy(pluto.rx.buf.C_ptr);
+        C_iio_buffer_destroy(pluto.tx.buf.C_ptr);
         C_iio_context_destroy(pluto.ctx);
         pluto.tx.released = true;
         pluto.rx.released = true;
