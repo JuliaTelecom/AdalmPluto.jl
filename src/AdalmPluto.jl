@@ -618,6 +618,45 @@ function updateGain!(pluto::PlutoSDR, value::Int64)
 end
 
 """
+    updateCarrierFreq!(pluto, value)
+
+Changes the carrier frequency. Prints the new effective frequency.
+
+# Arguments
+- `pluto::PlutoSDR` : the radio to modify.
+- `value::Int64` : the new carrier frequency.
+
+# Returns
+- `errno::Int` : 0 or a negative error code.
+"""
+function updateCarrierFreq!(pluto::PlutoSDR, value::Int64)
+    # set the carrier frequencie for RX
+    errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn_lo, "frequency", value);
+    if (errno < 0); return errno; end;
+
+    # store the requested configuration and effective configuration for RX
+    effectiveCarrierFreq = getEffectiveCfg(pluto.rx)[2];
+    @info "New RX carrier frequency : $effectiveCarrierFreq ($value)"
+    if (effectiveCarrierFreq != value); @warnrx "Effective carrier frequency ≠ Requested frequency"; end;
+    pluto.rx.cfg.carrierFreq = value;
+    pluto.rx.effectiveCarrierFreq = effectiveCarrierFreq;
+
+    # set the carrier frequencie for TX
+    errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn_lo, "frequency", value);
+    if (errno < 0); return errno; end;
+
+    # store the requested configuration and effective configuration for TX
+    effectiveCarrierFreq = getEffectiveCfg(pluto.tx)[2];
+    @info "New TX carrier frequency : $effectiveCarrierFreq ($value)"
+    if (effectiveCarrierFreq != value); @warntx "Effective carrier frequency ≠ Requested frequency"; end;
+    pluto.tx.cfg.carrierFreq = value;
+    pluto.tx.effectiveCarrierFreq = effectiveCarrierFreq;
+
+    # not actually errno because it's equal to the number of bytes written
+    return 0;
+end
+
+"""
     recv(pluto, nbSamples)
 
 Reads nbSamples from the Julia buffer. If there are less than nbSamples samples in the Julia buffer,
