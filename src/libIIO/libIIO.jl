@@ -15,6 +15,7 @@ using Pkg.Artifacts;
 const libIIO_rootpath = artifact"libIIO";
 const libIIO = joinpath(libIIO_rootpath, "libiio.so");
 # needed for libIIO functions, maybe move them ?
+# TODO : remove ?
 const BUF_SIZE = 2^12; # same value as iio_common.h
 const C_INT_MAX = 2^31 - 1;
 # disable Julia errors and return the NULL/error code instead

@@ -80,6 +80,15 @@ Empty struct to manage pointers to the `iio_data_format` C struct.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/structiio__data__format.html)
 """
 mutable struct iio_data_format
+    length::Cuint;
+    bits::Cuint;
+    shift::Cuint;
+    is_signed::Cuchar;
+    is_fully_defined::Cuchar;
+    is_be::Cuchar;
+    with_scale::Cuchar;
+    scale::Cdouble;
+    repeat::Cuint;
 end
 
 
@@ -89,7 +98,7 @@ end
 """
     @assert_null_pointer expression
 
-    Throws an error if the expression does not return a non-null pointer.
+    Throws an error if the expression returns a null pointer.
     If the expression return a `Ptr{type}` the error message is "type* null pointer".
 """
 macro assert_null_pointer(ex)
