@@ -32,3 +32,9 @@ makedocs(;
         ],
     ],
 )
+
+deploydocs(
+    repo = "github.com/JuliaTelecom/AdalmPluto.jl.git",
+    target = "build",
+    push_preview = true,
+)
