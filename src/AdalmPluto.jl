@@ -27,7 +27,10 @@ export
     recv!,
     refillJuliaBufferRX,
     updateGain!,
-    updateGainMode!
+    updateGainMode!,
+    updateCarrierFreq!,
+    updateSamplingRate!,
+    updateBandwidth!
 ;
 
 # constants
