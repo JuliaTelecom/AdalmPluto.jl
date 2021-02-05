@@ -594,9 +594,9 @@ end
 """
     close(pluto)
 
-Frees the C allocated memory associated to the pluto structure.
+Frees the C allocated memory associated to the PlutoSDR structure.
 """
-function close(pluto::PlutoSDR)
+function Base.close(pluto::PlutoSDR)
     if pluto.released
         @warn "Pluto has already been released, abort call";
     else

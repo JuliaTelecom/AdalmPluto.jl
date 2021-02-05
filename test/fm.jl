@@ -56,7 +56,7 @@ function test_fmTenSeconds(carrierFreq::Int64 = Int64(96e6), samplingRate::Int64
         wavSmpCount = 0;
 
         rawSamples = zeros(ComplexF32, 1024*1024);
-        @time while(wavSmpCount < 10*audioRendering)
+        while(wavSmpCount < 10*audioRendering)
             n = recv!(rawSamples, pluto);
             samples = filt(h1, rawSamples);
             samples = samples[1+64:decim1:end-64];
