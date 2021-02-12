@@ -83,7 +83,6 @@ Introduced in version 0.9.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Context.html#ga477dfddaefe0acda401f600247e13fc7)
 """
-# TODO: TEST
 function C_iio_context_get_attr(context::Ptr{iio_context}, index::UInt32)
     name, value = Ref{Cstring}(), Ref{Cstring}();
     ret = ccall(
@@ -111,14 +110,13 @@ Introduced in version 0.9.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Context.html#ga6394d108d425e4a6ed28d00c0e93d6ed)
 """
-# TODO: do something about null if the assertions are disabled
 function C_iio_context_get_attr_value(context::Ptr{iio_context}, name::String)
     @assert_Cstring value = ccall(
         (:iio_context_get_attr_value, libIIO),
         Cstring, (Ptr{iio_context}, Cstring),
         context, name
     );
-    return Base.unsafe_string(value);
+    return value != C_NULL ? Base.unsafe_string(value) : "";
 end
 
 """
@@ -255,13 +253,13 @@ Get the version of the backend in use.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Context.html#ga342bf90d946e7ed3815372db22c4d3a6)
 """
 function C_iio_context_get_version(context::Ptr{iio_context})
-    major, minor, git_tag = 0, 0, zeros(UInt8, 8);
+    major, minor, git_tag = zeros(Cuint, 1), zeros(Cuint, 1), zeros(UInt8, 8);
     ret = ccall(
         (:iio_context_get_version, libIIO),
-        Cint, (Ptr{iio_context}, Ptr{Cuint}, Ptr{Cuint}, Ptr{Cchar}),
-        context, Ref{UInt32}(major), Ref{UInt32}(minor), Ref(git_tag)
+        Cint, (Ptr{iio_context}, Ref{Cuint}, Ref{Cuint}, Ptr{Cchar}),
+        context, pointer(major), pointer(minor), pointer(git_tag)
     );
-    return ret, major, minor, toString(git_tag);
+    return ret, Int(major[]), Int(minor[]), toString(git_tag);
 end
 
 """
