@@ -7,8 +7,8 @@ Retrieve the name of a given backend.
 - `index::UInt32` : The index corresponding to the attribute
 
 # Returns
-- On success, a pointer to a static NULL-terminated string
-- If the index is invalid, NULL is returned
+- On success, a NULL-terminated string
+- If the index is invalid, an empty string is returned
 
 Introduced in version 0.9.
 
@@ -20,7 +20,7 @@ function C_iio_get_backend(index::UInt32)
         Cstring, (Cuint,),
         index
     );
-    return Base.unsafe_string(backend);
+    return backend != C_NULL ? Base.unsafe_string(backend) : "";
 end
 
 """
@@ -78,13 +78,14 @@ Get the version of the libiio library.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c)
 """
 function C_iio_library_get_version()
-    major, minor, git_tag = 0, 0, zeros(UInt8, 8);
+    # That's pretty ugly if that's really the way to do it
+    major, minor, git_tag = zeros(Cuint, 1), zeros(Cuint, 1), zeros(UInt8, 8);
     ccall(
         (:iio_library_get_version, libIIO),
-        Cvoid, (Ptr{Cuint}, Ptr{Cuint}, Ptr{Cchar}),
-        Ref{UInt32}(major), Ref{UInt32}(minor), Ref(git_tag)
+        Cvoid, (Ref{Cuint}, Ref{Cuint}, Ptr{Cchar}),
+        pointer(major), pointer(minor), pointer(git_tag)
     );
-    return major, minor, toString(git_tag);
+    return Int(major[1]), Int(minor[1]), toString(git_tag);
 end
 
 """

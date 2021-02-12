@@ -38,6 +38,9 @@ end
 
 # helpers
 include("helpers.jl");
+export
+    toggleNoAssertions
+;
 
 # iio structures
 include("structures.jl");
