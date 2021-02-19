@@ -78,14 +78,13 @@ Get the version of the libiio library.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__TopLevel.html#gaaa29e5bac86d00a1cef6e2d00b0ea24c)
 """
 function C_iio_library_get_version()
-    # That's pretty ugly if that's really the way to do it
-    major, minor, git_tag = zeros(Cuint, 1), zeros(Cuint, 1), zeros(UInt8, 8);
+    major, minor, git_tag = Ref{Cuint}(0), Ref{Cuint}(0), zeros(UInt8, 8);
     ccall(
         (:iio_library_get_version, libIIO),
         Cvoid, (Ref{Cuint}, Ref{Cuint}, Ptr{Cchar}),
-        pointer(major), pointer(minor), pointer(git_tag)
+        major, minor, pointer(git_tag)
     );
-    return Int(major[1]), Int(minor[1]), toString(git_tag);
+    return Int(major[]), Int(minor[]), toString(git_tag);
 end
 
 """

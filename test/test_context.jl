@@ -42,16 +42,17 @@ using AdalmPluto;
         @test (global nb_devices = C_iio_context_get_devices_count(context)) > 0;
 
         if nb_devices < 1
-            @warn "Could not find devices in the context, skipping related tests"; return;
+            @warn "Could not find devices in the context, skipping related tests";
+        else
+            # C_iio_context_find_device
+            @test C_iio_context_find_device(context, "dummy") == C_NULL;
+            @test C_iio_context_find_device(context, "cf-ad9361-lpc") != C_NULL;
+
+            # C_iio_context_get_device
+            @test C_iio_context_get_device(context, UInt32(666)) == C_NULL;
+            @test C_iio_context_get_device(context, UInt32(0)) != C_NULL;
         end
 
-        # C_iio_context_find_device
-        @test C_iio_context_find_device(context, "dummy") == C_NULL;
-        @test C_iio_context_find_device(context, "cf-ad9361-lpc") != C_NULL;
-
-        # C_iio_context_get_device
-        @test C_iio_context_get_device(context, UInt32(666)) == C_NULL;
-        @test C_iio_context_get_device(context, UInt32(0)) != C_NULL;
     end
 
     @testset "Context attrs" begin
@@ -59,14 +60,15 @@ using AdalmPluto;
         @test (global nb_attrs = C_iio_context_get_attrs_count(context)) > 0
 
         if nb_attrs < 1
-            @warn "Could not find context specific attributes, skipping related tests"; return;
+            @warn "Could not find context specific attributes, skipping related tests";
+        else
+            # NOTE : Specific the radio used for the test, this test failing can be normal.
+            # C_iio_context_get_attr
+            @test C_iio_context_get_attr(context, UInt32(0)) == (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)");
+            # C_iio_context_get_attr_value
+            @test C_iio_context_get_attr_value(context, "hw_model") == "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)"
         end
 
-        # NOTE : Specific the radio used for the test, this test failing can be normal.
-        # C_iio_context_get_attr
-        @test C_iio_context_get_attr(context, UInt32(0)) == (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)");
-        # C_iio_context_get_attr_value
-        @test C_iio_context_get_attr_value(context, "hw_model") == "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)"
     end
 
 

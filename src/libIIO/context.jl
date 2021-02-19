@@ -253,11 +253,11 @@ Get the version of the backend in use.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Context.html#ga342bf90d946e7ed3815372db22c4d3a6)
 """
 function C_iio_context_get_version(context::Ptr{iio_context})
-    major, minor, git_tag = zeros(Cuint, 1), zeros(Cuint, 1), zeros(UInt8, 8);
+    major, minor, git_tag = Ref{Cuint}(0), Ref{Cuint}(0), zeros(UInt8, 8);
     ret = ccall(
         (:iio_context_get_version, libIIO),
         Cint, (Ptr{iio_context}, Ref{Cuint}, Ref{Cuint}, Ptr{Cchar}),
-        context, pointer(major), pointer(minor), pointer(git_tag)
+        context, major, minor, pointer(git_tag)
     );
     return ret, Int(major[]), Int(minor[]), toString(git_tag);
 end

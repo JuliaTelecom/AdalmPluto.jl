@@ -13,7 +13,7 @@ Retrieve the filename of an attribute.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gab6462404bb6667e9e9241a18e09a1638)
 """
-# TODO : does implicit ccall conversion to Cstring causes errors when NULL is returned?
+# TODO : fix C_NULL return with assertions disabled
 function C_iio_channel_attr_get_filename(channel::Ptr{iio_channel}, attr::String)
     @assert_Cstring name = ccall(
         (:iio_channel_attr_get_filename, libIIO),

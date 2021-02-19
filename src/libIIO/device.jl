@@ -1,3 +1,22 @@
+function iio_device_attr_decode_blocks(buf::Array{UInt8}, size::Cssize_t)
+    bytes_read = 0;
+    attrs = Tuple{Int, String}[];
+    while bytes_read < size
+        block_size = reinterpret(Int32, reverse(buf[(1:4) .+ bytes_read]))[];
+        if block_size % 4 != 0
+            block_size += 4 - (block_size % 4); # You need to round to the next multiple of 4. Source : read byte per byte the array.
+        end
+        if block_size < 0
+            push!(attrs, (block_size, ""));
+            bytes_read += 4;
+        else
+            push!(attrs, (block_size, toString(buf[(1:block_size-1) .+ (4 + bytes_read)])));
+            bytes_read += 4 + block_size;
+        end
+    end
+    return attrs;
+end
+
 """
     C_iio_device_attr_read(device, attr)
 
@@ -5,14 +24,16 @@ Read the content of the given device-specific attribute.
 
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
-- `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
+- `attr::String`            : A NULL-terminated string corresponding to the name of the attribute. Passing an empty string reads all the attributes.
 
 # Returns
 - On success, the number of bytes written to the buffer and the attribute value as a `String`.
 - On error, a negative errno code is returned along an empty `String`.
+- If all the attributes are being read, an array of the values above is returned.
+The string may be shorter than the number of bytes returned as the conversion trims excess null characters.
 
 # NOTE
-By passing NULL as the "attr" argument to iio_device_attr_read, it is now possible to read all of the attributes of a device.
+By passing NULL (replaced by an empty string in the Julia wrapper) as the "attr" argument to iio_device_attr_read, it is now possible to read all of the attributes of a device.
 
 The buffer is filled with one block of data per attribute of the device, by the order they appear in the iio_device structure.
 
@@ -23,13 +44,15 @@ if positive, it corresponds to the length of the data read. In that case, the re
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gaf0233eb0ef4a64ad70ebaef6328b0494)
 """
 function C_iio_device_attr_read(device::Ptr{iio_device}, attr::String)
+    if attr == ""; attr = C_NULL; end; # allows to read all the attributes
     buf = zeros(UInt8, BUF_SIZE);
     ret = ccall(
         (:iio_device_attr_read, libIIO),
         Cssize_t, (Ptr{iio_device}, Cstring, Cstring, Csize_t),
-        device, attr, Ref(buf), BUF_SIZE
+        device, attr, pointer(buf), BUF_SIZE
     );
-    return ret, String(Char.(buf[1:ret-1]));
+    attr == C_NULL ? attrs = iio_device_attr_decode_blocks(buf, ret) : attrs = toString(buf);
+    return ret, attrs;
 end
 
 """
@@ -73,13 +96,13 @@ Read the content of the given device-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga96364b7c7097bb8e4656924ea896a502)
 """
 function C_iio_device_attr_read_bool(device::Ptr{iio_device}, attr::String)
-    value::UInt8 = 0;
+    value = Ref{UInt8}(0);
     ret = ccall(
         (:iio_device_attr_read_bool, libIIO),
         Cint, (Ptr{iio_device}, Cstring, Ptr{Cuchar}),
-        device, attr, Ref(value)
+        device, attr, value
     );
-    return ret, Base.convert(Bool, value);
+    return ret, Base.convert(Bool, value[]);
 end
 
 """
@@ -98,13 +121,13 @@ Read the content of the given device-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gab1b150a5bfa7b1ab7fd76c538e15e4da)
 """
 function C_iio_device_attr_read_double(device::Ptr{iio_device}, attr::String)
-    value::Float64 = 0;
+    value = Ref{Float64}(0);
     ret = ccall(
         (:iio_device_attr_read_double, libIIO),
         Cint, (Ptr{iio_device}, Cstring, Ptr{Cdouble}),
-        device, attr, Ref(value)
+        device, attr, value
     );
-    return ret, value;
+    return ret, value[];
 end
 
 """
@@ -123,13 +146,13 @@ Read the content of the given device-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga0f7b5d21a4e40efac68e1ece44d7ba74)
 """
 function C_iio_device_attr_read_longlong(device::Ptr{iio_device}, attr::String)
-    value::Int64 = 0;
+    value = Ref{Int64}(0);
     ret = ccall(
         (:iio_device_attr_read_longlong, libIIO),
         Cint, (Ptr{iio_device}, Cstring, Ptr{Clonglong}),
-        device, attr, Ref(value)
+        device, attr, value
     );
-    return ret, value;
+    return ret, value[];
 end
 
 """
@@ -154,6 +177,10 @@ The buffer must contain one block of data per attribute of the device, by the or
 The first four bytes of one block correspond to a 32-bit signed value in network order.
 If negative, the attribute is not written;
 if positive, it corresponds to the length of the data to write. In that case, the rest of the block must contain the data.
+
+# WARNING
+If the value given is among the available values but not working on the radio,
+this function returns the success value without actually writing the value.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gaaa2d1867c15ef8f8424164d0ccea4dd8)
 """
@@ -267,7 +294,8 @@ Set the value of the given device-specific attribute.
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
-- `value`                   : A pointer to the data to be written (must be able to convert into a `Ptr{Cuchar}`)
+- `value::Ptr{Cvoid}`       : A pointer to the data to be written
+- `size::Csize_t`           : The number of bytes to be written
 
 # Returns
 - On success, the number of bytes written
@@ -275,12 +303,11 @@ Set the value of the given device-specific attribute.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga30829a67dcdffc902c4ba6801233e79a)
 """
-# maybe janky casting to Ptr{Cvoid}
-function C_iio_device_attr_write_raw(device::Ptr{iio_device}, attr::String, value)
+function C_iio_device_attr_write_raw(device::Ptr{iio_device}, attr::String, value::Ptr{Cvoid}, size::Csize_t)
     return ccall(
         (:iio_device_attr_write_raw, libIIO),
-        Cssize_t, (Ptr{iio_device}, Cstring, Ptr{Cuchar}, Csize_t),
-        device, attr, value, sizeof(value)
+        Cssize_t, (Ptr{iio_device}, Cstring, Ptr{Cvoid}, Csize_t),
+        device, attr, value, size
     );
 end
 
@@ -291,14 +318,16 @@ Read the content of the given buffer-specific attribute.
 
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
-- `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
+- `attr::String`            : A NULL-terminated string corresponding to the name of the attribute. Passing an empty string reads all the attributes.
 
 # Returns
 - On success, (number_of_bytes, value::String) is returned, where number of bytes should be the length of the string.
 - On error, (errno, "") is returned, where errno is a negative error code.
+- If all the attributes are being read, an array of the values above is returned.
+The string may be shorter than the actual number of bytes returned as the conversion trims excess null characters.
 
 # NOTE
-By passing NULL as the "attr" argument to `iio_device_buffer_attr_read`, it is now possible to read all of the attributes of a device.
+By passing NULL (replaced by an empty string in the Julia wrapper) as the "attr" argument to `iio_device_buffer_attr_read`, it is now possible to read all of the attributes of a device.
 
 The buffer is filled with one block of data per attribute of the buffer, by the order they appear in the iio_device structure.
 
@@ -309,13 +338,15 @@ if positive, it corresponds to the length of the data read. In that case, the re
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gaa77d52bb9dea248cc3de682778a08a6f)
 """
 function C_iio_device_buffer_attr_read(device::Ptr{iio_device}, attr::String)
+    if attr == ""; attr = C_NULL; end; # allows to read all the attributes
     buf = zeros(UInt8, BUF_SIZE);
     ret = ccall(
         (:iio_device_buffer_attr_read, libIIO),
         Cssize_t, (Ptr{iio_device}, Cstring, Cstring, Csize_t),
-        device, attr, Ref(buf), BUF_SIZE
+        device, attr, pointer(buf), BUF_SIZE
     );
-    return ret, String(Char.(buf[1:ret-1]));
+    attr == C_NULL ? attrs = iio_device_attr_decode_blocks(buf, ret) : attrs = toString(buf);
+    return ret, attrs;
 end
 
 """
@@ -359,13 +390,13 @@ Read the content of the given buffer-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga92ee863b94e6f841efec3919f57f5193)
 """
 function C_iio_device_buffer_attr_read_bool(device::Ptr{iio_device}, attr::String)
-    value::UInt8 = 0;
+    value = Ref{UInt8}(0);
     ret = ccall(
         (:iio_device_buffer_attr_read_bool, libIIO),
         Cint, (Ptr{iio_device}, Cstring, Ptr{Cuchar}),
-        device, attr, Ref(value)
+        device, attr, value
     );
-    return ret, Base.convert(Bool, value);
+    return ret, Base.convert(Bool, value[]);
 end
 
 """
@@ -384,13 +415,13 @@ Read the content of the given buffer-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga44952198b73ff6b0c0c0b53d3cd6d1bd)
 """
 function C_iio_device_buffer_attr_read_double(device::Ptr{iio_device}, attr::String)
-    value::Float64 = 0;
+    value = Ref{Float64}(0);
     ret = ccall(
         (:iio_device_buffer_attr_read_double, libIIO),
         Cint, (Ptr{iio_device}, Cstring, Ptr{Cdouble}),
-        device, attr, Ref(value)
+        device, attr, value
     );
-    return ret, value;
+    return ret, value[];
 end
 
 """
@@ -409,13 +440,13 @@ Read the content of the given buffer-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gae5b9be890edb372d3e30a14ce1c79874)
 """
 function C_iio_device_buffer_attr_read_longlong(device::Ptr{iio_device}, attr::String)
-    value::Int64 = 0;
+    value = Ref{Int64}(0);
     ret = ccall(
         (:iio_device_buffer_attr_read_longlong, libIIO),
         Cint, (Ptr{iio_device}, Cstring, Ptr{Clonglong}),
-        device, attr, Ref(value)
+        device, attr, value
     );
-    return ret, value;
+    return ret, value[];
 end
 
 """
@@ -556,7 +587,8 @@ Set the value of the given buffer-specific attribute.
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
 - `attr::String`            : A NULL-terminated string corresponding to the name of the attribute
-- `value`                   : A pointer to the data to be written (must be able to convert into a `Ptr{Cuchar}`)
+- `value::Ptr{Cvoid}`       : A pointer to the data to be written
+- `size::Csize_t`           : The number of bytes to be written
 
 # Returns
 - On success, the number of bytes written
@@ -564,12 +596,11 @@ Set the value of the given buffer-specific attribute.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga982e2bcb890aab88eabf833a00ba841a)
 """
-# maybe janky casting to Ptr{Cvoid}
-function C_iio_device_buffer_attr_write_raw(device::Ptr{iio_device}, attr::String, value)
+function C_iio_device_buffer_attr_write_raw(device::Ptr{iio_device}, attr::String, value::Ptr{Cvoid}, size::Csize_t)
     return ccall(
         (:iio_device_buffer_attr_write_raw, libIIO),
-        Cssize_t, (Ptr{iio_device}, Cstring, Ptr{Cuchar}, Csize_t),
-        device, attr, value, sizeof(value)
+        Cssize_t, (Ptr{iio_device}, Cstring, Ptr{Cvoid}, Csize_t),
+        device, attr, value, size
     );
 end
 
@@ -832,11 +863,10 @@ Retrieve a previously associated pointer of an iio_device structure.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga87cff8d90e1a68e73410e4a527cc5334)
 """
-# TODO: test
 function C_iio_device_get_data(device::Ptr{iio_device})
     return ccall(
-        (:iio_device_get_context, libIIO),
-        Ptr{Cuchar}, (Ptr{iio_device},),
+        (:iio_device_get_data, libIIO),
+        Ptr{Cvoid}, (Ptr{iio_device},),
         device
     );
 end
@@ -905,7 +935,7 @@ function C_iio_device_get_trigger(device::Ptr{iio_device})
     trigger = Ptr{iio_device}();
     ret = ccall(
         (:iio_device_get_trigger, libIIO),
-        Cint, (Ptr{iio_device}, Ptr{Ptr{iio_device}}),
+        Cint, (Ptr{iio_device}, Ref{Ptr{iio_device}}),
         device, Ref(trigger)
     );
     return ret, trigger
@@ -935,7 +965,9 @@ end
 """
     C_iio_device_set_data(device, data)
 
-Associate a pointer to an iio_device structure.
+Associate a pointer to an iio_device structure. If the pointer is a Julia pointer, you need to protect the data from the GC.
+
+See the [Julia Documentation](https://docs.julialang.org/en/v1/manual/calling-c-and-fortran-code/#Garbage-Collection-Safety) and [`GC.@preserve`](https://docs.julialang.org/en/v1/base/base/#Base.GC.@preserve).
 
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
@@ -943,13 +975,11 @@ Associate a pointer to an iio_device structure.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gab566248f50503d8975cf258a1f218275)
 """
-# TODO: test (pretty sure it doesn't work, at least not in a reliable way)
-# you probably also need to make sure data lives longer than device
-function C_iio_device_set_data(device::Ptr{iio_device}, data)
+function C_iio_device_set_data(device::Ptr{iio_device}, data::Ptr{Cvoid})
     ccall(
         (:iio_device_set_data, libIIO),
-        Cvoid, (Ptr{iio_device}, Ptr{Cuchar}),
-        device, Ref(data)
+        Cvoid, (Ptr{iio_device}, Ptr{Cvoid}),
+        device, data
     );
 end
 
