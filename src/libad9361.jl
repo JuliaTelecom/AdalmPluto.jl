@@ -92,9 +92,9 @@ function ad9361_baseband_auto_rate(device::Ptr{iio_device}, rate::Int64)
 
     fir_buffer = "RX 3 GAIN -6 DEC $decimation\nTX 3 GAIN 0 INT $decimation\n";
     fir_buffer *= join(map(c -> "$c,$c\n", fir));
-    fir_buffer *= "\n";
+    fir_buffer = Cuchar.(collect(fir_buffer * "\n"));
 
-    ret = C_iio_device_attr_write_raw(device, "filter_fir_config", fir_buffer);
+    ret = C_iio_device_attr_write_raw(device, "filter_fir_config", Ptr{Cvoid}(pointer(fir_buffer)), UInt64(sizeof(fir_buffer)));
     if ret < 0; return ret; end;
 
     if rate <= 25e6 / 12

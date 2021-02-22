@@ -20,7 +20,7 @@ function C_iio_channel_attr_get_filename(channel::Ptr{iio_channel}, attr::String
         Cstring, (Ptr{iio_channel}, Cstring),
         channel, attr
     );
-    return name;
+    return Base.unsafe_string(name);
 end
 
 """
@@ -35,9 +35,11 @@ Read the content of the given channel-specific attribute.
 # Returns
 - On success, `(nbytes, value::String)` where nbytes is the length of the value string.
 - On error, `(errno, "")` is returned, where errno is a negative error code.
+- If all the attributes are begin read, an array of the values above is returned.
+The string may be shorter than the number of bytes returned as the conversion tirims excess null characters.
 
 # NOTE
-By passing NULL as the "attr" argument to `iio_channel_attr_read`, it is now possible to read all of the attributes of a channel.
+By passing NULL (replaced by an empty string in the Julia wrapper) as the "attr" argument to `iio_channel_attr_read`, it is now possible to read all of the attributes of a channel.
 
 The buffer is filled with one block of data per attribute of the channel, by the order they appear in the iio_channel structure.
 
@@ -48,13 +50,15 @@ if positive, it corresponds to the length of the data read. In that case, the re
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga2c2ca5696d1341067051eb390d5014ae)
 """
 function C_iio_channel_attr_read(channel::Ptr{iio_channel}, attr::String)
+    if attr == ""; attr = C_NULL; end; # allows to read all the attributes
     buf = zeros(UInt8, BUF_SIZE);
     ret = ccall(
         (:iio_channel_attr_read, libIIO),
         Cssize_t, (Ptr{iio_channel}, Cstring, Cstring, Csize_t),
-        channel, attr, pointer(buf, 1), BUF_SIZE
+        channel, attr, pointer(buf), BUF_SIZE
     );
-    return ret, String(Char.(buf[1:ret-1]));
+    attr == C_NULL ? attrs = iio_decode_blocks(buf, ret) : attrs = toString(buf);
+    return ret, attrs;
 end
 
 """
@@ -98,13 +102,13 @@ Read the content of the given channel-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga319f39c313bbd4d331e23df51e4d3ce6)
 """
 function C_iio_channel_attr_read_bool(channel::Ptr{iio_channel}, attr::String)
-    value::UInt8 = 0;
+    value = Ref{UInt8}(0);
     ret = ccall(
         (:iio_channel_attr_read_bool, libIIO),
         Cint, (Ptr{iio_channel}, Cstring, Ptr{Cuchar}),
-        channel, attr, Ref(value)
+        channel, attr, value
     );
-    return ret, Base.convert(Bool, value);
+    return ret, Base.convert(Bool, value[]);
 end
 
 """
@@ -123,13 +127,13 @@ Read the content of the given channel-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga75ac9b81eb7e7e8a961afb67748e4102)
 """
 function C_iio_channel_attr_read_double(channel::Ptr{iio_channel}, attr::String)
-    value::Float64 = 0;
+    value = Ref{Float64}(0);
     ret = ccall(
         (:iio_channel_attr_read_double, libIIO),
         Cint, (Ptr{iio_channel}, Cstring, Ptr{Cdouble}),
-        channel, attr, Ref(value)
+        channel, attr, value
     );
-    return ret, value;
+    return ret, value[];
 end
 
 """
@@ -148,13 +152,13 @@ Read the content of the given channel-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga116c61892bf3d20ff07efd642c5dfbe1)
 """
 function C_iio_channel_attr_read_longlong(channel::Ptr{iio_channel}, attr::String)
-    value::Int64 = 0;
+    value = Ref{Int64}(0);
     ret = ccall(
         (:iio_channel_attr_read_longlong, libIIO),
         Cint, (Ptr{iio_channel}, Cstring, Ptr{Clonglong}),
-        channel, attr, Ref(value)
+        channel, attr, value
     );
-    return ret, value;
+    return ret, value[];
 end
 
 """
@@ -227,7 +231,7 @@ Set the value of the given channel-specific attribute.
 - `value::Bool` : A bool value to set the attribute to
 
 # Returns
-- On success, the number of bytes written
+- On success, 0 is returned
 - On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga9a385b9b05d20f33f8e587feb2ebe81a)
@@ -251,7 +255,7 @@ Set the value of the given channel-specific attribute.
 - `value::Float64` : A double value to set the attribute to
 
 # Returns
-- On success, the number of bytes written
+- On success, 0 is returned
 - On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gad9d6ec4a02948c6416cc99254bdbfa50)
@@ -275,7 +279,7 @@ Set the value of the given channel-specific attribute.
 - `value::Int64` : A long long value to set the attribute to
 
 # Returns
-- On success, the number of bytes written
+- On success, 0 is returned
 - On error, a negative errno code is returned
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gac55cb77a1baf797e54a8a4e31b2f4680)
@@ -296,7 +300,8 @@ Set the value of the given channel-specific attribute.
 # Parameters
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 - `attr::String` : a NULL-terminated string corresponding to the name of the attribute
-- `value` : A pointer to the data to be written. Must be castable to Ptr{Cuchar}.
+- `value::Ptr{Cvoid}`       : A pointer to the data to be written
+- `size::Csize_t`           : The number of bytes to be written
 
 # Returns
 - On success, the number of bytes written
@@ -304,12 +309,11 @@ Set the value of the given channel-specific attribute.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gacd0d3dd36bdc64a9f967e21a891230eb)
 """
-# maybe janky casting to Ptr{Cvoid}
-function C_iio_channel_attr_write_raw(channel::Ptr{iio_channel}, attr::String, value)
+function C_iio_channel_attr_write_raw(channel::Ptr{iio_channel}, attr::String, value::Ptr{Cvoid}, size::Csize_t)
     return ccall(
         (:iio_channel_attr_write_raw, libIIO),
         Cssize_t, (Ptr{iio_channel}, Cstring, Ptr{Cuchar}, Csize_t),
-        channel, attr, value, sizeof(value)
+        channel, attr, value, size
     );
 end
 
@@ -397,6 +401,7 @@ Get the channel-specific attribute present at the given index.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gafc3c52f360424c097a24d1925923d772)
 """
+# TODO fix unsafe_string
 function C_iio_channel_get_attr(channel::Ptr{iio_channel}, index::UInt32)
     @assert_Cstring attr = ccall(
         (:iio_channel_get_attr, libIIO),
@@ -440,11 +445,10 @@ Retrieve a previously associated pointer of an iio_channel structure.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gacbce92eaefb8d61c1e4f0dc042b211e6)
 """
-# can return null
 function C_iio_channel_get_data(channel::Ptr{iio_channel})
     return ccall(
         (:iio_channel_get_data, libIIO),
-        Ptr{Cuchar}, (Ptr{iio_channel},),
+        Ptr{Cvoid}, (Ptr{iio_channel},),
         channel
     );
 end
@@ -504,7 +508,6 @@ Get the modifier type of the given channel.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga4c3179cee86d8992ee6c6bdbcaa44156)
 """
-# TODO: check return value
 function C_iio_channel_get_modifier(channel::Ptr{iio_channel})
     return ccall(
         (:iio_channel_get_modifier, libIIO),
@@ -535,7 +538,8 @@ function C_iio_channel_get_name(channel::Ptr{iio_channel})
         Cstring, (Ptr{iio_channel},),
         channel
     );
-    return Base.unsafe_string(name);
+    if name == C_NULL; name = ""; else; name = Base.unsafe_string(name); end;
+    return name;
 end
 
 """
@@ -551,7 +555,6 @@ Get the type of the given channel.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga281660051fb40b5b4055227466a3be36)
 """
-# TODO: check return value
 function C_iio_channel_get_type(channel::Ptr{iio_channel})
     return ccall(
         (:iio_channel_get_type, libIIO),
@@ -635,14 +638,11 @@ Demultiplex and convert the samples of a given channel.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga5c01edc37b0b57aef503abd5989a6a30)
 """
-# TODO: fix buffer size (or remove the function altogether as it make more sense to preallocate the buffer)
-# le:s12/16>>4
-# means little endian signed, 12bits of data, 16bits sample, shifted to be LSB aligned
-function C_iio_channel_read(chn::Ptr{iio_channel}, buf::Ptr{iio_buffer})
-    dst = zeros(UInt8, BUF_SIZE);
-    nbytes = C_iio_channel_read!(chn, buf, dst);
-    return nbytes, dst;
-end
+#  function C_iio_channel_read(chn::Ptr{iio_channel}, buf::Ptr{iio_buffer})
+    #  dst = zeros(UInt8, BUF_SIZE);
+    #  nbytes = C_iio_channel_read!(chn, buf, dst);
+    #  return nbytes, dst;
+#  end
 
 """
     C_iio_channel_read!(chn, buf, dst)
@@ -686,7 +686,6 @@ Demultiplex the samples of a given channel.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gacd227a6861960ea2fb49d957f62887dd)
 """
-# TODO
 function C_iio_channel_read_raw()
     return "PLACEHOLDER"
 end
@@ -694,20 +693,20 @@ end
 """
     C_iio_channel_set_data(channel, data)
 
-Associate a pointer to an iio_channel structure.
+Associate a pointer to an iio_channel structure. If the pointer is a Julia pointer, you need to protect the data from the GC.
+
+See the [Julia Documentation](https://docs.julialang.org/en/v1/manual/calling-c-and-fortran-code/#Garbage-Collection-Safety) and [`GC.@preserve`](https://docs.julialang.org/en/v1/base/base/#Base.GC.@preserve).
 
 # Parameters
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
-- `data` : The pointer to be associated. Must be castabel to `Ptr{Cuchar}`.
+- `data::Ptr{Cvoid}`          : The pointer to be associated.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga5150c9b73386d899460ebafbe614f338)
 """
-# Ptr{Cvoid} again
-# also probably need to make sure data lifetime > channel lifetime
-function C_iio_channel_set_data(channel::Ptr{iio_channel}, data)
+function C_iio_channel_set_data(channel::Ptr{iio_channel}, data::Ptr{Cvoid})
     ccall(
         (:iio_channel_set_data, libIIO),
-        Cvoid, (Ptr{iio_channel}, Ptr{Cuchar}),
+        Cvoid, (Ptr{iio_channel}, Ptr{Cvoid}),
         channel, data
     );
 end

@@ -48,7 +48,7 @@ function test_fmTenSeconds(carrierFreq::Int64 = Int64(96e6), samplingRate::Int64
         # init pluto
         global pluto = openPluto(carrierFreq, samplingRate, 64);
 
-        AdalmPluto.ad9361_baseband_auto_rate(C_iio_context_find_device(pluto.ctx, "ad9361-phy"), Int(samplingRate));
+        @show AdalmPluto.ad9361_baseband_auto_rate(C_iio_context_find_device(pluto.ctx, "ad9361-phy"), Int(samplingRate));
 
         # demodulation
         global wavSamples = zeros(Float32, Int(11*audioRendering));

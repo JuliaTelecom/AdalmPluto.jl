@@ -1,22 +1,3 @@
-function iio_device_attr_decode_blocks(buf::Array{UInt8}, size::Cssize_t)
-    bytes_read = 0;
-    attrs = Tuple{Int, String}[];
-    while bytes_read < size
-        block_size = reinterpret(Int32, reverse(buf[(1:4) .+ bytes_read]))[];
-        if block_size % 4 != 0
-            block_size += 4 - (block_size % 4); # You need to round to the next multiple of 4. Source : read byte per byte the array.
-        end
-        if block_size < 0
-            push!(attrs, (block_size, ""));
-            bytes_read += 4;
-        else
-            push!(attrs, (block_size, toString(buf[(1:block_size-1) .+ (4 + bytes_read)])));
-            bytes_read += 4 + block_size;
-        end
-    end
-    return attrs;
-end
-
 """
     C_iio_device_attr_read(device, attr)
 
@@ -51,7 +32,7 @@ function C_iio_device_attr_read(device::Ptr{iio_device}, attr::String)
         Cssize_t, (Ptr{iio_device}, Cstring, Cstring, Csize_t),
         device, attr, pointer(buf), BUF_SIZE
     );
-    attr == C_NULL ? attrs = iio_device_attr_decode_blocks(buf, ret) : attrs = toString(buf);
+    attr == C_NULL ? attrs = iio_decode_blocks(buf, ret) : attrs = toString(buf);
     return ret, attrs;
 end
 
@@ -345,7 +326,7 @@ function C_iio_device_buffer_attr_read(device::Ptr{iio_device}, attr::String)
         Cssize_t, (Ptr{iio_device}, Cstring, Cstring, Csize_t),
         device, attr, pointer(buf), BUF_SIZE
     );
-    attr == C_NULL ? attrs = iio_device_attr_decode_blocks(buf, ret) : attrs = toString(buf);
+    attr == C_NULL ? attrs = iio_decode_blocks(buf, ret) : attrs = toString(buf);
     return ret, attrs;
 end
 
@@ -971,7 +952,7 @@ See the [Julia Documentation](https://docs.julialang.org/en/v1/manual/calling-c-
 
 # Parameters
 - `device::Ptr{iio_device}` : A pointer to an iio_device structure
-- `data`                    : A pointer to the data to be associated (must be able to convert into a `Ptr{Cuchar}`)
+- `data::Ptr{Cvoid}`        : A pointer to the data to be associated.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gab566248f50503d8975cf258a1f218275)
 """

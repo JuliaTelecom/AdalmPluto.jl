@@ -11,7 +11,9 @@ using AdalmPluto;
         global txd,rxd = AdalmPluto.findTRXDevices(ctx);
         global phy = C_iio_context_find_device(ctx, AdalmPluto.PHY_DEVICE_NAME);
     catch
-        @error "Could not get a valid uri or context or devices, skipping the remaining tests"; return;
+        @error "Could not get a valid uri or context or devices, skipping the remaining tests";
+        C_iio_context_destroy(ctx);
+        return;
     end
 
     @testset "Device properties" begin
@@ -101,14 +103,14 @@ using AdalmPluto;
             C_iio_device_attr_write(phy, attr, saved_attr);
 
             #  C_iio_device_attr_read_bool (device::Ptr, …)
-            @test C_iio_device_attr_read_bool(phy, "xo_correction") == (0, true);           # no boolean attributes, so we read a number
+            @test C_iio_device_attr_read_bool(phy, "xo_correction") == (0, true);   # no boolean attributes, so we read a number
             #  C_iio_device_attr_write_bool (device::Ptr, …)
-            @test_skip C_iio_device_attr_write_bool(phy, nothing) == 0;               # there are no boolean attributes to write to
+            @test_skip C_iio_device_attr_write_bool(phy, nothing) == 0;             # there are no boolean attributes to write to
 
             #  C_iio_device_attr_read_double (device::Ptr, …)
-            @test C_iio_device_attr_read_double(phy, "xo_correction")[2] > 0;               # same here, real value is an integer
+            @test C_iio_device_attr_read_double(phy, "xo_correction")[2] > 0;       # same here, real value is an integer
             #  C_iio_device_attr_write_double (device::Ptr, …)
-            @test_skip C_iio_device_attr_write_double(phy, nothing) == 0;             # there are no double attributes to write to
+            @test_skip C_iio_device_attr_write_double(phy, nothing) == 0;           # there are no double attributes to write to
 
             #  C_iio_device_attr_read_longlong (device::Ptr, …)
             @test (global saved_longlong = C_iio_device_attr_read_longlong(phy, "xo_correction")[2]) > 0;
@@ -201,4 +203,6 @@ using AdalmPluto;
         # C_iio_device_buffer_attr_write_all
         @test_skip C_iio_device_buffer_attr_write_all() == Any;
     end
+
+    C_iio_context_destroy(ctx);
 end

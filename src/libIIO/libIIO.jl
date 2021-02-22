@@ -1,21 +1,18 @@
 module libIIO_jl
 
-# TODO: if I have the time, look into bindgen
-
-# TODO: make it possible to provide buffers / variables
-# TODO: convert C numeric types to julia types
-# TODO: T E S T S (a lot of implicit conversions)
-# Cstring always converted
-# No number conversion
-# Probably contains typos
+# Regarding type convertions :
+#   - Basic types as arguments need to be passed as the corresponding Julia type to the wrapper function.
+#   - Basic types as return values keep the Ctype alias and are not converted to "native" Julia type.
+#   Ex: If the C function returns a size_t, the wrapper function returns a Csize_t (or long long -> Clonglong)
+# This is done to keep the maximum transparency as to what the C function needs, does, and returns
+# When the C function needs a pointer, a reference to a native Julia type is used.
 
 using Pkg.Artifacts;
 
 # init globals and lib path
 const libIIO_rootpath = artifact"libIIO";
 const libIIO = joinpath(libIIO_rootpath, "libiio.so");
-# needed for libIIO functions, maybe move them ?
-# TODO : remove ?
+# needed for libIIO functions
 const BUF_SIZE = 2^12; # same value as iio_common.h
 const C_INT_MAX = 2^31 - 1;
 # disable Julia errors and return the NULL/error code instead
@@ -42,19 +39,8 @@ export
     toggleNoAssertions
 ;
 
-# iio structures
-include("structures.jl");
-
-# wrappers
-include("scan.jl");
-include("toplevel.jl");
-include("context.jl");
-include("device.jl");
-include("channel.jl");
-include("buffer.jl");
-include("debug.jl");
-
 # structures exports
+include("structures.jl");
 export
     iio_context_info,
     iio_scan_block,
@@ -69,6 +55,7 @@ export
 ;
 
 # scan exports
+include("scan.jl");
 export
    C_iio_context_info_get_description,
    C_iio_context_info_get_uri,
@@ -83,6 +70,7 @@ export
 ;
 
 # toplevel exports
+include("toplevel.jl");
 export
     C_iio_get_backend,
     C_iio_get_backends_count,
@@ -92,6 +80,7 @@ export
 ;
 
 # context exports
+include("context.jl");
 export
     C_iio_context_clone,
     C_iio_context_destroy,
@@ -115,6 +104,7 @@ export
 ;
 
 # device exports
+include("device.jl");
 export
     C_iio_device_attr_read,
     C_iio_device_attr_read_all,             # PLACEHOLDER : function pointer needed
@@ -159,6 +149,7 @@ export
 ;
 
 # channel exports
+include("channel.jl");
 export
     C_iio_channel_attr_get_filename,
     C_iio_channel_attr_read,
@@ -186,7 +177,7 @@ export
     C_iio_channel_is_enabled,
     C_iio_channel_is_output,
     C_iio_channel_is_scan_element,
-    C_iio_channel_read,
+    #  C_iio_channel_read,
     C_iio_channel_read!,
     C_iio_channel_read_raw,                 # PLACEHOLDER : data format ?
     C_iio_channel_set_data,
@@ -195,12 +186,13 @@ export
 ;
 
 # buffer exports
+include("buffer.jl");
 export
     C_iio_buffer_cancel,
     C_iio_buffer_destroy,
     C_iio_buffer_end,
     C_iio_buffer_first,
-    C_iio_buffer_foreach_sample,            # PLACEHOLDER
+    C_iio_buffer_foreach_sample,            # PLACEHOLDER : function pointer needed
     C_iio_buffer_get_data,
     C_iio_buffer_get_device,
     C_iio_buffer_get_poll_fd,
@@ -215,6 +207,7 @@ export
 ;
 
 # debug exports
+include("debug.jl");
 export
     C_iio_device_get_sample_size,
     C_iio_device_identify_filename
