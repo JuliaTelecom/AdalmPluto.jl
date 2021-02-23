@@ -19,8 +19,6 @@ end
 
 # --- Pretty printing functions --- #
 
-# TODO: macro/function to print errors
-
 # To print fancy message with different colors with Tx and Rx
 function customPrint(str, handler;style...)
 	msglines = split(chomp(str), '\n');
@@ -33,31 +31,43 @@ function customPrint(str, handler;style...)
 	end
 end
 
-# define macro for printing Rx info
-macro inforx(str)
-	quote
-		customPrint($(esc(str)), "Rx";bold=true,color=:light_green)
-	end
+"""
+    @infoPluto TRX str
+
+Prints custom info messages for either Rx or Tx.
+
+# Example
+- `@infoPluto :RX "msg"` to print a warning concerning the Rx part.
+- `@infoPluto :TX "msg"` to print a warning concerning the Tx part.
+"""
+
+macro infoPluto(TRX, str)
+    quote
+        TRX = $(TRX);
+        if TRX == :RX
+            customPrint($(esc(str)), "Rx";bold=true,color=:light_blue)
+        else TRX == :TX
+            customPrint($(esc(str)), "Tx";bold=true,color=:light_blue)
+        end
+    end
 end
 
-# define macro for printing Rx warning
-macro warnrx(str)
-	quote
-		customPrint($(esc(str)), "Rx Warning";bold=true,color=:light_yellow)
-	end
-end
+"""
+    @warnPluto TRX str
 
-# define macro for printing Tx info
-macro infotx(str)
-	quote
-		customPrint($(esc(str)), "Tx";bold=true,color=:light_blue)
-	end
-end
+Prints custom warnings for either Rx or Tx.
 
-# define macro for printing Tx warning
-macro warntx(str)
-	quote
-		customPrint($(esc(str)), "Tx Warning";bold=true,color=:light_yellow)
-	end
+# Example
+- `@warnPluto :RX "msg"` to print a warning concerning the Rx part.
+- `@warnPluto :TX "msg"` to print a warning concerning the Tx part.
+"""
+macro warnPluto(TRX, str)
+    quote
+        TRX = $(TRX);
+        if TRX == :RX
+            customPrint($(esc(str)), "Rx Warning";bold=true,color=:light_yellow)
+        else TRX == :TX
+            customPrint($(esc(str)), "Tx Warning";bold=true,color=:light_yellow)
+        end
+    end
 end
-

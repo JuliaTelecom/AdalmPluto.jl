@@ -1,0 +1,6 @@
+[deps]
+AdalmPluto = "af34ca7c-e544-47d5-a6fe-72495f08728e"
+DSP = "717857b8-e6f2-59f4-9121-6e50c889abd2"
+FileIO = "5789e2e9-d7fb-5bc7-8068-2c6fae9b9549"
+ProgressMeter = "92933f4c-e287-5a05-a399-4b506db050ca"
+WAV = "8149f6b0-98f6-5db9-b78f-408fbbb8ef88"

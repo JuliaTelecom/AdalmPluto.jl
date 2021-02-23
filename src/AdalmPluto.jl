@@ -403,29 +403,39 @@ function findIQChannels(device::Ptr{iio_device}, iID::String, qID::String, isOut
 end
 
 """
-    getEffectiveCfg(wrapper)
+    updateEffectiveCfg!(trx)
 
-Returns the effective sampling rate and carrier frequency of either a `txWrapper` or `rxWrapper`.
+Updates the stored values of the effective sampling rate and carrier frequency of either a `PlutoTx` or `PlutoRx`.
+If the values are different than the ones in the `ChannelCfg` of the structure, a warning is printed.
+Returns the effective values values.
 
 # Arguments
-- `wrapper::Union{txWrapper, rxWrapper}` : the wrapper to read the current configuration from.
+- `trx::Union{PlutoTx, PlutoRx}` : the structure containing the channel to read the current configuration from.
 
 # Returns
 - `effectiveSamplingRate::Int` : the current sampling rate.
 - `effectiveCarrierFreq::Int` : the current carrier frequency.
 """
-function getEffectiveCfg(wrapper::Union{txWrapper, rxWrapper})
-    ret, effectiveSamplingRate = C_iio_channel_attr_read(wrapper.chn, "sampling_frequency");
+function updateEffectiveCfg!(trx::Union{PlutoTx, PlutoRx})
+    if typeof(trx) == PlutoRx; global type = :RX; else; global type = :TX; end;
+
+    ret, effectiveSamplingRate = C_iio_channel_attr_read_longlong(trx.iio.chn, "sampling_frequency");
     if ret < 0
-        @warntx "Could not get effective sampling rate (Error $ret):\n" * C_iio_strerror(ret);
-    else
-        effectiveSamplingRate = parse(Int64, effectiveSamplingRate);
+        @warnPluto type "Could not get effective sampling rate (Error $ret):\n" * C_iio_strerror(ret);
     end
-    ret, effectiveCarrierFreq = C_iio_channel_attr_read(wrapper.chn_lo, "frequency");
+    ret, effectiveCarrierFreq = C_iio_channel_attr_read_longlong(trx.iio.chn_lo, "frequency");
     if ret < 0
-        @warntx "Could not get effective carrier frequency (Error $ret):\n" * C_iio_strerror(ret);
-    else
-        effectiveCarrierFreq = parse(Int64, effectiveCarrierFreq);
+        @warnPluto type "Could not get effective carrier frequency (Error $ret):\n" * C_iio_strerror(ret);
+    end
+
+    trx.effectiveSamplingRate = effectiveSamplingRate;
+    trx.effectiveCarrierFreq  = effectiveCarrierFreq;
+
+    if effectiveSamplingRate != trx.cfg.samplingRate
+        @warnPluto type "Effective sampling rate ($effectiveSamplingRate) ≠ Requested sampling rate ($(trx.cfg.samplingRate))";
+    end
+    if effectiveCarrierFreq != trx.cfg.carrierFreq
+        @warnPluto type "Effective carrier frequency ($effectiveCarrierFreq) ≠ Requested carrier frequency ($(trx.cfg.carrierFreq))";
     end
 
     return effectiveSamplingRate, effectiveCarrierFreq;
@@ -492,8 +502,8 @@ function openPluto(
         throw(ArgumentError("Couldn't parse antenna ports. Expected syntax: TXport;RXport"));
     end
     radio = openPluto(
-        ChannelCfg(antenna[1], carrierFreq, samplingRate, bandwidth),
-        ChannelCfg(antenna[2], carrierFreq, samplingRate, bandwidth),
+        ChannelCfg(antenna[1], bandwidth, samplingRate, carrierFreq),
+        ChannelCfg(antenna[2], bandwidth, samplingRate, carrierFreq),
         bufferSize,
         addr,
         backend
@@ -526,8 +536,12 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
     end
 
     context = createContext(uri);
+    # printing stuff
+    description = C_iio_context_get_description(context);
+    println("Description :\n$description\n");
+
     tx, rx = findTRXDevices(context);
-    txChannel, rxChannel, txLoChannel, rxLoChannel = cfgChannels(context, txCfg, rxCfg);
+
     tx0_i, tx0_q = findIQChannels(tx, "voltage0", "voltage1", true);
     rx0_i, rx0_q = findIQChannels(rx, "voltage0", "voltage1", false);
 
@@ -535,6 +549,8 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
     C_iio_channel_enable(tx0_q);
     C_iio_channel_enable(rx0_i);
     C_iio_channel_enable(rx0_q);
+
+    txChannel, rxChannel, txLoChannel, rxLoChannel = cfgChannels(context, txCfg, rxCfg);
 
     iioTx = txWrapper(
         tx,
@@ -551,14 +567,6 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
         rxLoChannel
     );
 
-    # printing stuff
-    description = C_iio_context_get_description(context);
-    println("Description :\n$description\n");
-
-    # effective cfg
-    txEffectiveSamplingRate, txEffectiveCarrierFreq = getEffectiveCfg(iioTx);
-    rxEffectiveSamplingRate, rxEffectiveCarrierFreq = getEffectiveCfg(iioRx);
-
     # 1 MiS buffers
     txBuffer = createBuffer(tx, bufferSize);
     rxBuffer = createBuffer(rx, bufferSize);
@@ -567,18 +575,22 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
         iioTx,
         txCfg,
         txBuffer,
-        txEffectiveSamplingRate,
-        txEffectiveCarrierFreq,
+        -1,
+        -1,
         false
     );
     rx = PlutoRx(
         iioRx,
         rxCfg,
         rxBuffer,
-        rxEffectiveSamplingRate,
-        rxEffectiveCarrierFreq,
+        -1,
+        -1,
         false
     );
+
+    # effective cfg
+    updateEffectiveCfg!(tx);
+    updateEffectiveCfg!(rx);
 
     pluto = PlutoSDR(
         context,
@@ -658,12 +670,12 @@ Prints a warning and returns the error code if it doesn't succeed.
 function updateGain!(pluto::PlutoSDR, value::Int64)
     ret = updateGainMode!(pluto, MANUAL);
     if ret < 0
-        @warnrx "Could not set gain_control_mode to manual (Error $ret):\n" * C_iio_strerror(ret);
+        @warnPluto :RX "Could not set gain_control_mode to manual (Error $ret):\n" * C_iio_strerror(ret);
         return ret;
     end
     ret = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "hardwaregain", value);
     if ret < 0
-        @warnrx "Could not set hardwaregain to $value (Error $ret):\n" * C_iio_strerror(ret);
+        @warnPluto :RX "Could not set hardwaregain to $value (Error $ret):\n" * C_iio_strerror(ret);
     end
     return ret;
 end
@@ -686,22 +698,18 @@ function updateCarrierFreq!(pluto::PlutoSDR, value::Int64)
     if (errno < 0); return errno; end;
 
     # store the requested configuration and effective configuration for RX
-    effectiveCarrierFreq = getEffectiveCfg(pluto.rx)[2];
-    @info "New RX carrier frequency : $effectiveCarrierFreq ($value)"
-    if (effectiveCarrierFreq != value); @warnrx "Effective carrier frequency ≠ Requested frequency"; end;
     pluto.rx.cfg.carrierFreq = value;
-    pluto.rx.effectiveCarrierFreq = effectiveCarrierFreq;
+    effectiveCarrierFreq = updateEffectiveCfg!(pluto.rx)[2];
+    @infoPluto :RX "New RX carrier frequency : $effectiveCarrierFreq ($value)"
 
     # set the carrier frequencie for TX
     errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn_lo, "frequency", value);
     if (errno < 0); return errno; end;
 
     # store the requested configuration and effective configuration for TX
-    effectiveCarrierFreq = getEffectiveCfg(pluto.tx)[2];
-    @info "New TX carrier frequency : $effectiveCarrierFreq ($value)"
-    if (effectiveCarrierFreq != value); @warntx "Effective carrier frequency ≠ Requested frequency"; end;
     pluto.tx.cfg.carrierFreq = value;
-    pluto.tx.effectiveCarrierFreq = effectiveCarrierFreq;
+    effectiveCarrierFreq = updateEffectiveCfg!(pluto.tx)[2];
+    @infoPluto :TX "New TX carrier frequency : $effectiveCarrierFreq ($value)"
 
     # not actually errno because it's equal to the number of bytes written
     return 0;
@@ -725,22 +733,18 @@ function updateSamplingRate!(pluto::PlutoSDR, value::Int64)
     if (errno < 0); return errno; end;
 
     # store the requested configuration and effective configuration for RX
-    effectiveSamplingRate = getEffectiveCfg(pluto.rx)[1];
-    @info "New RX sampling rate : $effectiveSamplingRate ($value)"
-    if (effectiveSamplingRate != value); @warnrx "Effective sampling rate ≠ Requested sampling rate"; end;
     pluto.rx.cfg.samplingRate = value;
-    pluto.rx.effectiveSamplingRate = effectiveSamplingRate;
+    effectiveSamplingRate = updateEffectiveCfg!(pluto.rx)[1];
+    @infoPluto :RX "New RX sampling rate : $effectiveSamplingRate ($value)"
 
     # set the sampling rate for TX
     errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn, "sampling_frequency", value);
     if (errno < 0); return errno; end;
 
     # store the requested configuration and effective configuration for TX
-    effectiveSamplingRate = getEffectiveCfg(pluto.tx)[1];
-    @info "New TX sampling rate : $effectiveSamplingRate ($value)"
-    if (effectiveSamplingRate != value); @warntx "Effective sampling rate ≠ Requested sampling rate"; end;
     pluto.tx.cfg.samplingRate = value;
-    pluto.tx.effectiveSamplingRate = effectiveSamplingRate;
+    effectiveSamplingRate = updateEffectiveCfg!(pluto.tx)[1];
+    @infoPluto :TX "New TX sampling rate : $effectiveSamplingRate ($value)"
 
     # not actually errno because it's equal to the number of bytes written
     return 0;
@@ -758,13 +762,13 @@ Changes the bandwidth. Prints the new value.
 # Returns
 - `errno::Int` : 0 or a negative error code.
 """
-function updateBandwidth!(pluto, value)
+function updateBandwidth!(pluto, value::Int64)
     # set the bandwidth for RX
     errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "rf_bandwidth", value);
     if (errno < 0); return errno; end;
 
     # store the new configuration for RX
-    @info "New RX bandwidth : $value"
+    @infoPluto :RX "New Rx bandwidth : $value";
     pluto.rx.cfg.samplingRate = value;
 
     # set the bandwidth for TX
@@ -772,10 +776,9 @@ function updateBandwidth!(pluto, value)
     if (errno < 0); return errno; end;
 
     # store the new configuration for TX
-    @info "New TX bandwidth : $value"
+    @infoPluto :TX "New Tx bandwidth : $value";
     pluto.tx.cfg.samplingRate = value;
 
-    # not actually errno because it's equal to the number of bytes written
     return 0;
 end
 
@@ -818,7 +821,6 @@ function recv!(sig::Array{ComplexF32}, pluto::PlutoSDR)
         # if needed refill the Julia buffer
         if (pluto.rx.buf.nb_samples == 0)
             nbNewSamples = refillJuliaBufferRX(pluto);
-            #  @inforx "$nbNewSamples new samples in the Julia RX buffer."
         end
         samplesQueried = min(samplesNeeded, pluto.rx.buf.nb_samples);
         # assuming the Julia buffer is filled until the end (which it should)

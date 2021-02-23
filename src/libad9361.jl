@@ -83,7 +83,7 @@ function ad9361_baseband_auto_rate(device::Ptr{iio_device}, rate::Int64)
 
     if is_fir_enabled
         if current_rate <= 25e6 / 2
-            C_iio_channel_attr_write_longlong(channel, "sampling_frequency", 3e6);
+            C_iio_channel_attr_write_longlong(channel, "sampling_frequency", Int64(3e6));
         end
         if (ret = ad9361_set_trx_fir_enable(device, false)) < 0
             return ret;
@@ -105,7 +105,7 @@ function ad9361_baseband_auto_rate(device::Ptr{iio_device}, rate::Int64)
 
         max = (dac_rate / tx_rate) * 16;
         if max < taps
-            C_iio_channel_attr_write_longlong(channel, "sampling_frequency", 3e6);
+            C_iio_channel_attr_write_longlong(channel, "sampling_frequency", Int64(3e6));
         end
         if (ret = ad9361_set_trx_fir_enable(device, true)) < 0
             return ret;
