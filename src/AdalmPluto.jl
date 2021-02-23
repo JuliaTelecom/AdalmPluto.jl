@@ -1,7 +1,6 @@
 # --- All libIIO functions wrapped --- #
 
 module AdalmPluto
-# TODO: unit testing
 
 using Reexport;
 

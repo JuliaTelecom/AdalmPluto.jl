@@ -1,7 +1,0 @@
-src/AdalmPluto.jl:4:# TODO: unit testing
-src/libIIO/device.jl:608:# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
-src/libIIO/device.jl:638:# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
-src/libIIO/device.jl:690:# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
-src/libIIO/channel.jl:16:# TODO : fix C_NULL return with assertions disabled
-src/libIIO/channel.jl:378:# TODO: fix unsafe_string
-src/libIIO/channel.jl:404:# TODO fix unsafe_string

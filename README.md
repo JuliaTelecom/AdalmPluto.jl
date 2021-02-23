@@ -56,3 +56,21 @@ to get the data format if you want to do the convertion manually.
 to get the pointers and distance between samples.
 - [`iio_buffer_push`](https://analogdevicesinc.github.io/libiio/master/libiio/group__Buffer.html#gae7033c625d128667a56cf482aa3149bd)
 to send the data to the hardware.
+
+## Artifact
+
+The artifact used for the proof of concept is hosted [here](https://github.com/ledoune/libiio/releases/tag/v0.21).
+
+It has been compiled using the following options :
+```bash
+git clone https://github.com/analogdevicesinc/libiio.git
+cd libiio
+mkdir build
+cd build
+cmake ../ -DCMAKE_BUILD_TYPE=Release -DWITH_LOCAL_CONFIG=OFF -DINSTALL_UDEV_RULE=OFF -DWITH_USB_BACKEND=YES -DWITH_NETWORK_BACKEND=YES -DWITH_LOCAL_BACKEND=YES -DWITH_XML_BACKEND=YES -DWITH_SERIAL_BACKEND=NO -DWITH_EXAMPLES=YES
+make -j$(nproc)
+tar cvzf libiio-0.21-custom.tar.gz libiio.so* tests/iio_* iiod/iiod .version
+```
+
+In order to work properly, the artifact needs a udev rule to access the USB peripherals. It is written in a volatile folder, hence the need the input the sudo password after each reboot.
+The password prompt does not come from Julia and no information about the password goes through julia. See the `__init__` in `.../AdalmPluto.jl/src/libIIO/libIIO.jl` for more details.
