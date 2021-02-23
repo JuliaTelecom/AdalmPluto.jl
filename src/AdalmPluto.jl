@@ -132,7 +132,7 @@ end
     |   +-- buf::IIO_Buffer
     |   |   |
     |   |   +-- C_ptr::Ptr{iio_buffer};         |< Pointer to the C buffer
-    |   |   +-- C_size::Csize_t;                |< Size of the C buffer
+    |   |   +-- C_size::Csize_t;                |< Size of the C buffer in samples
     |   |   +-- C_sample_size::Cssize_t;        |< Size of a sample in the C buffer
     |   |   +-- C_first::Ptr{Cuchar};           |< Pointer to the first sample in the C buffer
     |   |   +-- C_last::Ptr{Cuchar};            |< Pointer to the last sample in the C buffer
@@ -165,7 +165,7 @@ end
     |   +-- buf::IIO_Buffer
     |   |   |
     |   |   +-- C_ptr::Ptr{iio_buffer};         |< Pointer to the C buffer
-    |   |   +-- C_size::Csize_t;                |< Size of the C buffer
+    |   |   +-- C_size::Csize_t;                |< Size of the C buffer in samples
     |   |   +-- C_sample_size::Cssize_t;        |< Size of a sample in the C buffer
     |   |   +-- C_first::Ptr{Cuchar};           |< Pointer to the first sample in the C buffer
     |   |   +-- C_last::Ptr{Cuchar};            |< Pointer to the last sample in the C buffer
@@ -769,7 +769,7 @@ function updateBandwidth!(pluto, value::Int64)
 
     # store the new configuration for RX
     @infoPluto :RX "New Rx bandwidth : $value";
-    pluto.rx.cfg.samplingRate = value;
+    pluto.rx.cfg.bandwidth = value;
 
     # set the bandwidth for TX
     errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn, "rf_bandwidth", value);
@@ -777,7 +777,7 @@ function updateBandwidth!(pluto, value::Int64)
 
     # store the new configuration for TX
     @infoPluto :TX "New Tx bandwidth : $value";
-    pluto.tx.cfg.samplingRate = value;
+    pluto.tx.cfg.bandwidth = value;
 
     return 0;
 end

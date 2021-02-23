@@ -22,7 +22,8 @@ end
 # To print fancy message with different colors with Tx and Rx
 function customPrint(str, handler;style...)
 	msglines = split(chomp(str), '\n');
-	printstyled("┌", handler, ": ";style...);
+    length(msglines) > 1 ? symb = "┌" : symb = "[";
+	printstyled(symb, handler, ": ";style...);
 	println(msglines[1]);
 	for i in 2:length(msglines)
 		(i == length(msglines)) ? symb = "└ " : symb = "|";
