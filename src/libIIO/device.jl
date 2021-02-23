@@ -597,7 +597,7 @@ Try to find a device-specific attribute by its name.
 # Returns
 - On success, a NULL-terminated string.
 - On failure, if the assertions are enabled, throws an error.
-- On failure, if the assertions are disabled, also throws an error :D
+- On failure, if the assertions are disabled, returns an empty string.
 
 # NOTE
 This function is useful to detect the presence of an attribute.
@@ -605,14 +605,13 @@ It can also be used to retrieve the name of an attribute as a pointer to a stati
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#gafcbece1ac6260b06bcdf02d9eb55e5fd)
 """
-# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
 function C_iio_device_find_attr(device::Ptr{iio_device}, name::String)
     @assert_Cstring attr = ccall(
         (:iio_device_find_attr, libIIO),
         Cstring, (Ptr{iio_device}, Cstring),
         device, name
     );
-    return Base.unsafe_string(attr);
+    return attr == C_NULL ? "" : Base.unsafe_string(attr);
 end
 
 """
@@ -627,7 +626,7 @@ Try to find a buffer-specific attribute by its name.
 # Returns
 - On success, a NULL-terminated string.
 - On failure, if the assertions are enabled, throws an error.
-- On failure, if the assertions are disabled, also throws an error :D
+- On failure, if the assertions are disabled, returns an empty string.
 
 # NOTE
 This function is useful to detect the presence of an attribute.
@@ -635,14 +634,13 @@ It can also be used to retrieve the name of an attribute as a pointer to a stati
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga58baa15da06b2d497fb0334f35264240)
 """
-# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
 function C_iio_device_find_buffer_attr(device::Ptr{iio_device}, name::String)
     @assert_Cstring attr = ccall(
         (:iio_device_find_buffer_attr, libIIO),
         Cstring, (Ptr{iio_device}, Cstring),
         device, name
     );
-    return Base.unsafe_string(attr);
+    return attr == C_NULL ? "" : Base.unsafe_string(attr);
 end
 
 """
@@ -683,18 +681,17 @@ Get the device-specific attribute present at the given index.
 # Returns
 - On success, a NULL-terminated string.
 - On failure, if the assertions are enabled, throws an error.
-- On failure, if the assertions are disabled, also throws an error :D
+- On failure, if the assertions are disabled, returns an empty string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga70b03d4cb3cc3c4fb1b6451764c8ccec)
 """
-# TODO: fix unsafe_string(NULL) for it to return "" instead of failing
 function C_iio_device_get_attr(device::Ptr{iio_device}, index::UInt32)
     @assert_Cstring attr = ccall(
         (:iio_device_get_attr, libIIO),
         Cstring, (Ptr{iio_device}, Cuint),
         device, index
     );
-    return Base.unsafe_string(attr);
+    return attr == C_NULL ? "" : Base.unsafe_string(attr);
 end
 
 """
@@ -730,7 +727,7 @@ Get the buffer-specific attribute present at the given index.
 # Returns
 - On success, a NULL-terminated string.
 - On failure, if the assertions are enabled, throws an error.
-- On failure, if the assertions are disabled, also throws an error :D
+- On failure, if the assertions are disabled, returns an empty string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga7225b9df06559012d549d627fb451c2a)
 """
@@ -740,7 +737,7 @@ function C_iio_device_get_buffer_attr(device::Ptr{iio_device}, index::UInt32)
         Cstring, (Ptr{iio_device}, Cuint),
         device, index
     );
-    return Base.unsafe_string(attr);
+    return attr == C_NULL ? "" : Base.unsafe_string(attr);
 end
 
 """
@@ -885,17 +882,18 @@ Retrieve the device name (e.g. xadc)
 - A NULL-terminated string
 
 # NOTE
-If the device has no name, NULL is returned.
+If the device has no name and the assertions are enabled, throws an error.
+If the device has no name and the assertions are enabled, returns an emtpy string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Device.html#ga711666b3b3b6314fbe7e592b4632ab85)
 """
-# can return NULL
 function C_iio_device_get_name(device::Ptr{iio_device})
-    return Base.unsafe_string(ccall(
+    @assert_Cstring name = ccall(
         (:iio_device_get_name, libIIO),
         Cstring, (Ptr{iio_device},),
         device
-    ));
+    );
+    return name == C_NULL ? "" : Base.unsafe_string(name);
 end
 
 """

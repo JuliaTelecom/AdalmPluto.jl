@@ -34,7 +34,7 @@ Identify the channel or debug attribute corresponding to a filename.
 
 # Returns
 - On success, `(0, channel::Ptr{iio_channel}, attribute::String)` is returned.
-- On error, `(errno, NULL, NULL)` is returned, where errno is a negative error code.
+- On error, `(errno, NULL, "")` is returned, where errno is a negative error code.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Debug.html#ga87ef46fa578c7be7b3e2a6f9f16fdf7e)
 """
@@ -46,5 +46,5 @@ function C_iio_device_identify_filename(device::Ptr{iio_device}, filename::Strin
         Cint, (Ptr{iio_device}, Cstring, Ptr{Ptr{iio_channel}}, Ptr{Ptr{Cuchar}}),
         device, filename, channel, attribute
     );
-    return ret, channel[], Base.unsafe_string(attribute[]);
+    return attribute[] == C_NULL ? (ret, channel[], "") : (ret, channel[], Base.unsafe_string(attribute[]));
 end

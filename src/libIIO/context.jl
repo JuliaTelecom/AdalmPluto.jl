@@ -105,6 +105,7 @@ Retrieve the value of a context-specific attribute.
 Returns
 - On success, a NULL-terminated string.
 - If the name does not correspond to any attribute and the assertions are enabled, throws an error.
+- If the name does not correspond to any attribute and the assertions are disabled, returns an empty string.
 
 Introduced in version 0.9.
 

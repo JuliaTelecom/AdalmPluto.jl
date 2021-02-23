@@ -9,18 +9,17 @@ Retrieve the filename of an attribute.
 
 # Returns
 - On success, a NULL-terminated string
-- If the attribute name is unknown, NULL is returned. This may throw an error.
+- If the attribute name is unknown, NULL is returned. If the assertions are enabled, throws an error instead.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gab6462404bb6667e9e9241a18e09a1638)
 """
-# TODO : fix C_NULL return with assertions disabled
 function C_iio_channel_attr_get_filename(channel::Ptr{iio_channel}, attr::String)
     @assert_Cstring name = ccall(
         (:iio_channel_attr_get_filename, libIIO),
         Cstring, (Ptr{iio_channel}, Cstring),
         channel, attr
     );
-    return Base.unsafe_string(name);
+    return name == C_NULL ? "" : Base.unsafe_string(name);
 end
 
 """
@@ -368,21 +367,20 @@ Try to find a channel-specific attribute by its name.
 # Returns
 - On success, a NULL-terminated string.
 - On failure, if the assertions are enabled, throws an error.
-- On failure, if the assertions are disabled, also throws an error :D
+- On failure, if the assertions are disabled, returns an empty string.
 
 # NOTE
 This function is useful to detect the presence of an attribute. It can also be used to retrieve the name of an attribute as a pointer to a static string from a dynamically allocated string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga13b2db3252a2380a2b0b1bb15b8034a4)
 """
-# TODO: fix unsafe_string
 function C_iio_channel_find_attr(channel::Ptr{iio_channel}, name::String)
     @assert_Cstring attr = ccall(
         (:iio_channel_find_attr, libIIO),
         Cstring, (Ptr{iio_channel}, Cstring),
         channel, name
     );
-    return Base.unsafe_string(attr);
+    return attr == C_NULL ? "" : Base.unsafe_string(attr);
 end
 
 """
@@ -397,18 +395,17 @@ Get the channel-specific attribute present at the given index.
 # Returns
 - On success, a NULL-terminated string.
 - On failure, if the assertions are enabled, throws an error.
-- On failure, if the assertions are disabled, also throws an error :D
+- On failure, if the assertions are disabled, returns an empty string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#gafc3c52f360424c097a24d1925923d772)
 """
-# TODO fix unsafe_string
 function C_iio_channel_get_attr(channel::Ptr{iio_channel}, index::UInt32)
     @assert_Cstring attr = ccall(
         (:iio_channel_get_attr, libIIO),
         Cstring, (Ptr{iio_channel}, Cuint),
         channel, index
     );
-    return Base.unsafe_string(attr);
+    return attr == C_NULL ? "" : Base.unsafe_string(attr);
 end
 
 """
@@ -525,10 +522,10 @@ Retrieve the channel name (e.g. vccint)
 - `channel::Ptr{iio_channel}` : A pointer to an iio_channel structure
 
 # Returns
-- A NULL-terminated string
+- A NULL-terminated string.
 
 # NOTE
-If the channel has no name, NULL is returned. (Throws an error atm)
+If the channel has no name, and the assertions are enabled, throws an error. If the assertions are disabled, returns an empty string.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga37346a6f3fcfb1eb40572aec6c3b39ac)
 """
