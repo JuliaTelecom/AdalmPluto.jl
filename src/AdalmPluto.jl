@@ -432,23 +432,22 @@ function getEffectiveCfg(wrapper::Union{txWrapper, rxWrapper})
 end
 
 """
-    createBuffer(device, channel, samplesCount)
+    createBuffer(device, samplesCount)
 
-Creates a buffer for the provided channel. Returns a wrapper around the buffer with basic info
+Creates a buffer for the provided device. Returns a wrapper around the buffer with basic info
 (C pointer, sample size, first sample, last sample, steps between samples, Julia complex samples, number of non-queried Julia complex samples).
 
 # Arguments
-- `device::Ptr{iio_device}` : the device in which the buffer is created.
-- `channel::Ptr{iio_channel}` : the channel from which the buffer will be filled.
+- `device::Ptr{iio_device}` : the device for which the buffer is created.
 - `samplesCound::UInt` : the size of the buffer in samples.
 
 # Returns
 - `buffer::IIO_Buffer` : a buffer for the given channel with space for samplesCount samples.
 """
-function createBuffer(device::Ptr{iio_device}, channel::Ptr{iio_channel}, samplesCount::UInt)
+function createBuffer(device::Ptr{iio_device}, samplesCount::UInt)
     sampleSize = C_iio_device_get_sample_size(device);
     buf        = C_iio_device_create_buffer(device, samplesCount, false);
-    first      = C_iio_buffer_first(buf, channel);
+    first      = C_iio_buffer_start(buf);
     last       = C_iio_buffer_end(buf);
     step       = C_iio_buffer_step(buf);
 
@@ -561,8 +560,8 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
     rxEffectiveSamplingRate, rxEffectiveCarrierFreq = getEffectiveCfg(iioRx);
 
     # 1 MiS buffers
-    txBuffer = createBuffer(tx, tx0_i, bufferSize);
-    rxBuffer = createBuffer(rx, rx0_i, bufferSize);
+    txBuffer = createBuffer(tx, bufferSize);
+    rxBuffer = createBuffer(rx, bufferSize);
 
     tx = PlutoTx(
         iioTx,
@@ -812,7 +811,7 @@ Returns the number of samples filled or a negative error number.
 - `pluto::PlutoSDR` : the radio to read the samples from.
 """
 function recv!(sig::Array{ComplexF32}, pluto::PlutoSDR)
-    # TODO: make this function somewhat error resilient
+    # FIXME: make this function somewhat error resilient
     samplesNeeded = length(sig);
 
     while (samplesNeeded > 0)
@@ -821,7 +820,6 @@ function recv!(sig::Array{ComplexF32}, pluto::PlutoSDR)
             nbNewSamples = refillJuliaBufferRX(pluto);
             #  @inforx "$nbNewSamples new samples in the Julia RX buffer."
         end
-        # TODO: unfuck the indexes (refill the Julia buffer in an appropriate order)
         samplesQueried = min(samplesNeeded, pluto.rx.buf.nb_samples);
         # assuming the Julia buffer is filled until the end (which it should)
         sig[(end - samplesNeeded + 1):(end - samplesNeeded + samplesQueried)] =

@@ -179,10 +179,10 @@ export
     C_iio_channel_is_scan_element,
     #  C_iio_channel_read,
     C_iio_channel_read!,
-    C_iio_channel_read_raw,                 # PLACEHOLDER : data format ?
+    C_iio_channel_read_raw,                 # PLACEHOLDER : data format
     C_iio_channel_set_data,
-    C_iio_channel_write,                    # PLACEHOLDER : data format ?
-    C_iio_channel_write_raw                 # PLACEHOLDER : data format ?
+    C_iio_channel_write,                    # PLACEHOLDER : data format
+    C_iio_channel_write_raw                 # PLACEHOLDER : data format
 ;
 
 # buffer exports

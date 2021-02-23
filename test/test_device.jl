@@ -35,12 +35,12 @@ using AdalmPluto;
         #  C_iio_device_get_name (device::Ptr, …)
         @test C_iio_device_get_name(rxd) == AdalmPluto.RX_DEVICE_NAME;
 
-        # TODO: Find what that function does, and implement its test
+        # Find what that function does, and implement its test
         #  C_iio_device_set_kernel_buffers_count (device::Ptr, …)
         @test_skip C_iio_device_set_kernel_buffers_count(device, UInt32(2));
     end
 
-    #TODO: Are there triggers in the AdalmPluto ? Or are those functions meant for other radios ?
+    # Are there triggers in the AdalmPluto ? Or are those functions meant for other radios ?
     # From libiio doc: Some devices, mostly low speed ADCs and DACs, require a trigger
     @testset "Triggers" begin
         #  C_iio_device_is_trigger (device::Ptr, …)

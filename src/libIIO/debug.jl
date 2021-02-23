@@ -15,7 +15,6 @@ The sample size is not constant and will change when channels get enabled or dis
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Debug.html#ga52b3e955c10d6f962b2c2e749c7c02fb)
 """
-# TODO: check the note above about sample size not being constant
 function C_iio_device_get_sample_size(device::Ptr{iio_device})
     return ccall(
         (:iio_device_get_sample_size, libIIO),
@@ -39,7 +38,6 @@ Identify the channel or debug attribute corresponding to a filename.
 
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Debug.html#ga87ef46fa578c7be7b3e2a6f9f16fdf7e)
 """
-# TODO: document somewhere that this is the proper way to do modified pointers to pointers arguments w/o segfault
 function C_iio_device_identify_filename(device::Ptr{iio_device}, filename::String)
     channel = Ref{Ptr{iio_channel}}();
     attribute = Ref{Ptr{Cuchar}}();

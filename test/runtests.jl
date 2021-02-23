@@ -3,15 +3,14 @@ using Test;
 
 #  include("fm.jl");
 #  inlucde("test_AdalmPluto.jl");
-#  include("test_buffer.jl");
-#  include("test_debug.jl");
-#  include("test_structures.jl");
 @testset "libIIO_jl" begin
     include("test_toplevel.jl");
     include("test_scan.jl");
     include("test_context.jl");
     include("test_device.jl");
     include("test_channel.jl");
+    include("test_buffer.jl");
+    #  include("test_debug.jl");
 end
 
 function test_recvOnce()
@@ -28,7 +27,6 @@ end
 
 #  @testset "AdalmPluto.jl" begin
     #  @test test_recvOnce() == 0;
-    #  # TODO: test at least all the exported functions
 #  end
 #
 #  @testset "Audio" begin
