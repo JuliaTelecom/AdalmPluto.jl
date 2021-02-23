@@ -1,5 +1,42 @@
 # PlutoSDR
 
+## Documentation
+
+The documentation is available on the [Github Pages](https://juliatelecom.github.io/AdalmPluto.jl/dev/).
+
+## Basic usage
+
+Using the radio through USB.
+
+```jl
+using AdalmPluto;
+
+# Opening the radio with 100MHz carrier frequency, 3MHz sampling rate, and 64dB gain.
+radio = openPluto(Int(100e6), Int(3e6), 64; bandwidth=Int(20e6));
+
+# Receive the samples
+sig = zeros(ComplexF32, 1024*1024) # 1 MiS buffer
+recv!(sig, radio);
+
+# Do some treatment
+# ...
+# ...
+
+# Close the radio
+close(radio);
+```
+
+## Running the examples
+
+### FM Radio
+
+This example records a few seconds of FM radio as WAV to `.../AdalmPluto.jl/examples/samples/fm.wav`. The duration and station selection have to be modified by editing `.../AdalmPluto.jl/examples/fm.jl`.
+
+To launch the example (from the root folder of the project) : `julia --startup-file=no --project=./examples ./examples/fm.jl`.
+
+### Benchmark
+
+WIP
 
 ## Sending samples
 
