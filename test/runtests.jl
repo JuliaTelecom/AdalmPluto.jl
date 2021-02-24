@@ -69,14 +69,14 @@ end
     @test isapprox(pluto.rx.effectiveCarrierFreq, pluto.rx.cfg.carrierFreq; atol=5);
 
     #  updateBandwidth! (pluto, …)
-    @test updateBandwidth!(pluto, Int64(20e6)) == 0;
+    @test updateBandwidth!(pluto, Int64(20e6); doLog=false) == 0;
     @test pluto.tx.cfg.bandwidth == Int64(20e6);
     @test C_iio_channel_attr_read_longlong(pluto.tx.iio.chn, "rf_bandwidth") == (0, Int64(20e6));
     @test pluto.rx.cfg.bandwidth == Int64(20e6);
     @test C_iio_channel_attr_read_longlong(pluto.rx.iio.chn, "rf_bandwidth") == (0, Int64(20e6));
 
     #  updateSamplingRate! (pluto::PlutoSDR, …)
-    @test updateSamplingRate!(pluto, Int64(5e6)) == 0;
+    @test updateSamplingRate!(pluto, Int64(5e6); doLog=false) == 0;
     # Tx
     @test pluto.tx.cfg.samplingRate == Int64(5e6);
     @test isapprox(pluto.tx.effectiveSamplingRate, pluto.tx.cfg.samplingRate; atol=5);
@@ -85,7 +85,7 @@ end
     @test isapprox(pluto.rx.effectiveSamplingRate, pluto.rx.cfg.samplingRate; atol=5);
 
     #  updateCarrierFreq! (pluto::PlutoSDR, …)
-    @test updateCarrierFreq!(pluto, Int64(105.5e6)) == 0;
+    @test updateCarrierFreq!(pluto, Int64(105.5e6); doLog=false) == 0;
     # Tx
     @test pluto.tx.cfg.carrierFreq == Int64(105.5e6);
     @test isapprox(pluto.tx.effectiveCarrierFreq, pluto.tx.cfg.carrierFreq; atol=5);

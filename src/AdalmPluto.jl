@@ -411,11 +411,14 @@ Returns the effective values values.
 # Arguments
 - `trx::Union{PlutoTx, PlutoRx}` : the structure containing the channel to read the current configuration from.
 
+# Keywords
+- `doLog::Bool` : toggles the display of the new carrier frequency
+
 # Returns
 - `effectiveSamplingRate::Int` : the current sampling rate.
 - `effectiveCarrierFreq::Int` : the current carrier frequency.
 """
-function updateEffectiveCfg!(trx::Union{PlutoTx, PlutoRx})
+function updateEffectiveCfg!(trx::Union{PlutoTx, PlutoRx}; doLog=true)
     if typeof(trx) == PlutoRx; global type = :RX; else; global type = :TX; end;
 
     ret, effectiveSamplingRate = C_iio_channel_attr_read_longlong(trx.iio.chn, "sampling_frequency");
@@ -430,10 +433,10 @@ function updateEffectiveCfg!(trx::Union{PlutoTx, PlutoRx})
     trx.effectiveSamplingRate = effectiveSamplingRate;
     trx.effectiveCarrierFreq  = effectiveCarrierFreq;
 
-    if effectiveSamplingRate != trx.cfg.samplingRate
+    if effectiveSamplingRate != trx.cfg.samplingRate && doLog
         @warnPluto type "Effective sampling rate ($effectiveSamplingRate) ≠ Requested sampling rate ($(trx.cfg.samplingRate))";
     end
-    if effectiveCarrierFreq != trx.cfg.carrierFreq
+    if effectiveCarrierFreq != trx.cfg.carrierFreq && doLog
         @warnPluto type "Effective carrier frequency ($effectiveCarrierFreq) ≠ Requested carrier frequency ($(trx.cfg.carrierFreq))";
     end
 
@@ -680,7 +683,7 @@ function updateGain!(pluto::PlutoSDR, value::Int64)
 end
 
 """
-    updateCarrierFreq!(pluto, value)
+    updateCarrierFreq!(pluto, value; doLog)
 
 Changes the carrier frequency. Prints the new effective frequency.
 
@@ -688,18 +691,21 @@ Changes the carrier frequency. Prints the new effective frequency.
 - `pluto::PlutoSDR` : the radio to modify.
 - `value::Int64` : the new carrier frequency.
 
+# Keywords
+- `doLog::Bool` : toggles the display of the new carrier frequency
+
 # Returns
 - `errno::Int` : 0 or a negative error code.
 """
-function updateCarrierFreq!(pluto::PlutoSDR, value::Int64)
+function updateCarrierFreq!(pluto::PlutoSDR, value::Int64; doLog=true)
     # set the carrier frequencie for RX
     errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn_lo, "frequency", value);
     if (errno < 0); return errno; end;
 
     # store the requested configuration and effective configuration for RX
     pluto.rx.cfg.carrierFreq = value;
-    effectiveCarrierFreq = updateEffectiveCfg!(pluto.rx)[2];
-    @infoPluto :RX "New RX carrier frequency : $effectiveCarrierFreq ($value)"
+    effectiveCarrierFreq = updateEffectiveCfg!(pluto.rx; doLog=doLog)[2];
+    if doLog; @infoPluto :RX "New RX carrier frequency : $effectiveCarrierFreq ($value)"; end;
 
     # set the carrier frequencie for TX
     errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn_lo, "frequency", value);
@@ -707,15 +713,15 @@ function updateCarrierFreq!(pluto::PlutoSDR, value::Int64)
 
     # store the requested configuration and effective configuration for TX
     pluto.tx.cfg.carrierFreq = value;
-    effectiveCarrierFreq = updateEffectiveCfg!(pluto.tx)[2];
-    @infoPluto :TX "New TX carrier frequency : $effectiveCarrierFreq ($value)"
+    effectiveCarrierFreq = updateEffectiveCfg!(pluto.tx; doLog=doLog)[2];
+    if doLog; @infoPluto :TX "New TX carrier frequency : $effectiveCarrierFreq ($value)"; end;
 
     # not actually errno because it's equal to the number of bytes written
     return 0;
 end
 
 """
-    updateSamplingRate!(pluto, value)
+    updateSamplingRate!(pluto, value; doLog)
 
 Changes the sampling rate. Prints the new effective sampling rate.
 
@@ -723,18 +729,21 @@ Changes the sampling rate. Prints the new effective sampling rate.
 - `pluto::PlutoSDR` : the radio to modify.
 - `value::Int64` : the new sampling rate.
 
+# Keywords
+- `doLog::Bool` : toggles the display of the new carrier frequency
+
 # Returns
 - `errno::Int` : 0 or a negative error code.
 """
-function updateSamplingRate!(pluto::PlutoSDR, value::Int64)
+function updateSamplingRate!(pluto::PlutoSDR, value::Int64; doLog=true)
     # set the sampling rate for RX
     errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "sampling_frequency", value);
     if (errno < 0); return errno; end;
 
     # store the requested configuration and effective configuration for RX
     pluto.rx.cfg.samplingRate = value;
-    effectiveSamplingRate = updateEffectiveCfg!(pluto.rx)[1];
-    @infoPluto :RX "New RX sampling rate : $effectiveSamplingRate ($value)"
+    effectiveSamplingRate = updateEffectiveCfg!(pluto.rx; doLog=doLog)[1];
+    if doLog; @infoPluto :RX "New RX sampling rate : $effectiveSamplingRate ($value)"; end;
 
     # set the sampling rate for TX
     errno = C_iio_channel_attr_write_longlong(pluto.tx.iio.chn, "sampling_frequency", value);
@@ -742,8 +751,8 @@ function updateSamplingRate!(pluto::PlutoSDR, value::Int64)
 
     # store the requested configuration and effective configuration for TX
     pluto.tx.cfg.samplingRate = value;
-    effectiveSamplingRate = updateEffectiveCfg!(pluto.tx)[1];
-    @infoPluto :TX "New TX sampling rate : $effectiveSamplingRate ($value)"
+    effectiveSamplingRate = updateEffectiveCfg!(pluto.tx; doLog=doLog)[1];
+    if doLog; @infoPluto :TX "New TX sampling rate : $effectiveSamplingRate ($value)"; end;
 
     # not actually errno because it's equal to the number of bytes written
     return 0;
@@ -758,16 +767,19 @@ Changes the bandwidth. Prints the new value.
 - `pluto::PlutoSDR` : the radio to modify.
 - `value::Int64` : the new sampling rate.
 
+# Keywords
+- `doLog::Bool` : toggles the display of the new carrier frequency
+
 # Returns
 - `errno::Int` : 0 or a negative error code.
 """
-function updateBandwidth!(pluto, value::Int64)
+function updateBandwidth!(pluto, value::Int64; doLog=true)
     # set the bandwidth for RX
     errno = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "rf_bandwidth", value);
     if (errno < 0); return errno; end;
 
     # store the new configuration for RX
-    @infoPluto :RX "New Rx bandwidth : $value";
+    if doLog; @infoPluto :RX "New Rx bandwidth : $value"; end;
     pluto.rx.cfg.bandwidth = value;
 
     # set the bandwidth for TX
@@ -775,7 +787,7 @@ function updateBandwidth!(pluto, value::Int64)
     if (errno < 0); return errno; end;
 
     # store the new configuration for TX
-    @infoPluto :TX "New Tx bandwidth : $value";
+    if doLog; @infoPluto :TX "New Tx bandwidth : $value"; end;
     pluto.tx.cfg.bandwidth = value;
 
     return 0;
