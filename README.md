@@ -36,7 +36,23 @@ To launch the example (from the root folder of the project) : `julia --startup-f
 
 ### Benchmark
 
-WIP
+The actual sampling rate has been measured using the file `benchmark.jl`. The full results of the last run is available in `bench_results.txt`.
+
+The functions timed are :
+- `C_iio_buffer_refill` alone, which queries samples from the hardware.
+- `C_iio_buffer_refill` and two `C_iio_channel_read` for the IQ channels. The read function demultiplexes and converts to host format the data.
+- `AdalmPluto.refillJuliaBufferRX` which is the same thing as before with `reinterpret` added to convert the samples to `ComplexF32`.
+- `recv!` which calls the previous function reads from the Julia buffer into the target array.
+
+With julia lauched from the example folder :
+```
+julia> include("benchmark.jl");
+julia> plot, results = bench_all();
+julia> plot # to display a (very) basic unicode plot
+```
+This takes quite a while as each results are timed separately and the radio saturates quite quickly.
+
+![results](examples/bench_results.png)
 
 ## Sending samples
 
