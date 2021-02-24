@@ -42,7 +42,7 @@ The functions timed are :
 - `C_iio_buffer_refill` alone, which queries samples from the hardware.
 - `C_iio_buffer_refill` and two `C_iio_channel_read` for the IQ channels. The read function demultiplexes and converts to host format the data.
 - `AdalmPluto.refillJuliaBufferRX` which is the same thing as before with `reinterpret` added to convert the samples to `ComplexF32`.
-- `recv!` which calls the previous function reads from the Julia buffer into the target array.
+- `recv!` which calls the previous function and reads from the Julia buffer into the target array.
 
 With julia lauched from the example folder :
 ```
