@@ -11,7 +11,7 @@ using Pkg.Artifacts;
 
 # init globals and lib path
 const libIIO_rootpath = artifact"libIIO";
-const libIIO = joinpath(libIIO_rootpath, "libiio.so");
+const libIIO = joinpath(libIIO_rootpath, "libIIO/libiio.so");
 # needed for libIIO functions
 const BUF_SIZE = 2^12; # same value as iio_common.h
 const C_INT_MAX = 2^31 - 1;
