@@ -22,14 +22,17 @@ NO_ASSERT = false;
 # should be a volatile rule and will need to be added each boot
 # but it makes it possible to delete the artifact without leftovers
 function __init__()
-    if !isfile("/run/udev/rules.d/90-libiio.rules")
-        println("Could not find the necessary udev rule.\nAdding it to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
-        rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
-        open("/tmp/90-libiio.rules", "w") do f
-            write(f, rule);
+    # This workflow is only valid for Linux machines, as there is no rules for MACOS
+    if Sys.islinux()
+        if !isfile("/run/udev/rules.d/90-libiio.rules")
+            println("Could not find the necessary udev rule.\nAdding it to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
+            rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
+            open("/tmp/90-libiio.rules", "w") do f
+                write(f, rule);
+            end
+            run(`sudo mkdir -p /run/udev/rules.d`);
+            run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
         end
-        run(`sudo mkdir -p /run/udev/rules.d`);
-        run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
     end
 end
 
