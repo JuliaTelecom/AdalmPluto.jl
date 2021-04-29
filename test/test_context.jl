@@ -64,9 +64,13 @@ using AdalmPluto;
         else
             # NOTE : Specific the radio used for the test, this test failing can be normal.
             # C_iio_context_get_attr
-            @test C_iio_context_get_attr(context, UInt32(0)) == (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)");
+            flag1 = C_iio_context_get_attr(context, UInt32(0)) ==  (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)") 
+            flag2 = C_iio_context_get_attr(context, UInt32(0)) ==  (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9363A)") 
+            @test flag1 || flag2
             # C_iio_context_get_attr_value
-            @test C_iio_context_get_attr_value(context, "hw_model") == "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)"
+            flag1 =  C_iio_context_get_attr_value(context, "hw_model") ==   (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)") 
+            flag1 =  C_iio_context_get_attr_value(context, "hw_model") ==   (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9363A)") 
+            @test flag1 || flag2
         end
 
     end
