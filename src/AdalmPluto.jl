@@ -2,7 +2,8 @@
 
 module AdalmPluto
 
-using Reexport;
+using Reexport
+using Printf
 
 include("libIIO/libIIO.jl");
 @reexport using .libIIO_jl;
@@ -875,6 +876,24 @@ function refillJuliaBufferRX(pluto::PlutoSDR)
     return pluto.rx.buf.nb_samples;
 end
 
+
+""" 
+   print(pluto)
+   Print the current radio configuration 
+# Arguments
+- `pluto::PlutoSDR` : the radio to receive the samples from, and the structure storing those samples.
+
+# Returns
+- A string with the different configuration aspects
+"""
+function Base.print(pluto::PlutoSDR)
+	# Print message 
+	strF  = @sprintf(" Carrier Frequency: %2.3f MHz\n Sampling Frequency: %2.3f MHz\n",pluto.rx.effectiveCarrierFreq/1e6,pluto.rx.effectiveSamplingRate/1e6);
+    println("Current Pluto Configuration in Rx mode\n$strF");
+	strF  = @sprintf(" Carrier Frequency: %2.3f MHz\n Sampling Frequency: %2.3f MHz\n",pluto.tx.effectiveCarrierFreq/1e6,pluto.tx.effectiveSamplingRate/1e6);
+    println("Current Pluto Configuration in Tx mode\n$strF");
+
+end
 
 ##
 # This function is significantly slower than the one above despite using less arrays and doing stuff manually.
