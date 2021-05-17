@@ -3,5 +3,5 @@ arch = "x86_64"
 git-tree-sha1 ="04e0735ae3c6dfdd1795b5a5dd35673c89242c63" 
 
     [[libIIO.download]]
-    url = "https://github.com/JuliaTelecom/Artifact_LibIIO/releases/download/0.1/libIIO.tar.gz" 
+    url = "https://github.com/JuliaTelecom/Artifact_libIIO/releases/download/v0.1/libIIO.tar.gz" 
     sha256 ="3a966da7f6f8885d2b0a370459669f093de5ec4cd32f94566c4d6c890eb279b7"
