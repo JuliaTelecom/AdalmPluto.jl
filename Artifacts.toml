@@ -4,4 +4,4 @@ git-tree-sha1 ="690dbf097e3b2bc8213a8c3a199e94b46b1a1b10"
 
     [[libIIO.download]]
     url = "https://github.com/JuliaTelecom/Artifact_libIIO/releases/download/v0.1/libIIO.tar.gz" 
-    sha256 ="4900fbe0d85810e7676007c0a6756c8668c77714c649210cf90bb687e1815edf
+    sha256 ="4900fbe0d85810e7676007c0a6756c8668c77714c649210cf90bb687e1815edf"
