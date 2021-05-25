@@ -25,12 +25,14 @@ export
     close,
     recv,
     recv!,
+    send,
     refillJuliaBufferRX,
     updateGain!,
     updateGainMode!,
     updateCarrierFreq!,
     updateSamplingRate!,
-    updateBandwidth!
+    updateBandwidth!,
+    getGain
 ;
 
 # constants
@@ -684,6 +686,28 @@ function updateGain!(pluto::PlutoSDR, value::Int64)
 end
 
 """
+    getGain(pluto)
+
+Returns the gain value 
+# Arguments
+- `pluto::PlutoSDR` : the radio to modify.
+
+# Returns
+- `gain` :Current radio gain 
+"""
+function getGain(pluto::PlutoSDR)
+    value = Ref{Csize_t}(0)
+    ret,gain   = C_iio_channel_attr_read_longlong(pluto.rx.iio.chn, "hardwaregain")
+    if ret < 0
+        @warnPluto :RX "Could not read hardwaregain" 
+    end
+    return gain;
+end
+
+
+
+
+"""
     updateCarrierFreq!(pluto, value; doLog)
 
 Changes the carrier frequency. Prints the new effective frequency.
@@ -895,7 +919,57 @@ function Base.print(pluto::PlutoSDR)
 
 end
 
-##
+""" 
+ send(pluto,buffer;repeat=false)
+Send the buffer `buffer` with the Pluto device. If flag is set to true, repeat the transmission indefinively. If use_internal_buffer is set to true, the buffer used is the one already stored in the Pluto device (it saves buffer re-alloc)
+"""
+function send(pluto::PlutoSDR,buffer;flag=false,use_internal_buffer=false)
+    # We need to populate the internal buffer of the Pluto 
+    # As AD9361 takes 14 bits, we should somehow convert the input stream to Int, then <<2 to have MSB aligned, and write to the Pluto Tx buffer 
+    # From external buffer, populate internal Pluto buffer
+    if use_internal_buffer == false 
+        # --- Transfer buffer in iternal IIO_Buffer
+        N = populateBuffer!(pluto,buffer)
+    else 
+        # We will use previsouly transfered buffer, but need the size
+        N = pluto.tx.buf.nb_samples
+    end
+    cnt = 0
+    while true 
+        C_iio_buffer_push_partial(pluto.tx.buf.C_ptr,N)
+        cnt += N 
+        (flag == false) && break 
+    end
+    return cnt
+end
+
+""" 
+Populate Pluto internal IIO buffer with the desired samples from buffer. 
+populateBuffer(pluto,buffer)
+""" 
+function populateBuffer!(pluto,buffer::Vector)
+    N = length(buffer)
+    pluto.tx.buf.nb_samples = N
+    @assert N < 1024 * 1024 "Transmitted buffer is too large (should be < 1024 * 1024)"
+    # Recast pointer... 
+    ptr = Ptr{Int16}(pluto.tx.buf.C_first)
+    for n ∈ 1 : N
+        # Input is ]-1;1[ ==> Convert to Int 
+        # << 2 to be compliant with Q14 of AD 
+        tmpI = Int16( round(real(buffer[n]) * 1 << 15)) << 2 
+        tmpQ = Int16( round(imag(buffer[n]) * 1 << 15)) << 2 
+        # We need to populate Pluto buffer
+        # @Tx side we can directly play with pluto.tx.buff.C_first. Position is stored in ptr, and we navigate with the step from IIO_Buffer
+        unsafe_store!(ptr,tmpI,1)
+        unsafe_store!(ptr,tmpQ,2)
+        ptr += pluto.tx.buf.C_step # As we write I and Q but C_step contains 2 words
+    end
+    return UInt(N)
+end
+
+
+
+
 # This function is significantly slower than the one above despite using less arrays and doing stuff manually.
 # It is kept here to remind me why the weird interleaving of arrays is still my best solution.
 ##
