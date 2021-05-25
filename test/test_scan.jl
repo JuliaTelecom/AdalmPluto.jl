@@ -43,32 +43,31 @@ using AdalmPluto;
         end
     end
 
-    @testset "Scan block" begin
-        # C_iio_create_scan_block
-        @test (global scan_block = C_iio_create_scan_block("usb")) != C_NULL;
+    # @testset "Scan block" begin
+        # # C_iio_create_scan_block
+        # @test (global scan_block = C_iio_create_scan_block("usb")) != C_NULL;
 
-        if scan_block == C_NULL
-            @error "C_iio_create_scan_block failed, skipping the remaining tests.";
-        else
-            # C_iio_scan_block_scan
-            @test (global nb_contexts = C_iio_scan_block_scan(scan_block)) > 0;
+        # if scan_block == C_NULL
+            # @error "C_iio_create_scan_block failed, skipping the remaining tests.";
+        # else
+            # # C_iio_scan_block_scan
+            # @test (global nb_contexts = C_iio_scan_block_scan(scan_block)) > 0;
 
-            if nb_contexts < 0
-                @error "C_iio_scan_block_scan failed, skipping the remaining tests";
-                C_iio_scan_block_destroy(scan_block);
-            elseif nb_contexts == 0
-                @warn "0 contexts found, skipping the remaining tests";
-                C_iio_scan_block_destroy(scan_block);
-            else
-                # C_iio_scan_block_get_info
-                @test C_iio_scan_block_get_info(scan_block, UInt32(0)) != C_NULL;
+            # if nb_contexts < 0
+                # @error "C_iio_scan_block_scan failed, skipping the remaining tests";
+                # C_iio_scan_block_destroy(scan_block);
+            # elseif nb_contexts == 0
+                # @warn "0 contexts found, skipping the remaining tests";
+                # C_iio_scan_block_destroy(scan_block);
+            # else
+                # # C_iio_scan_block_get_info
+                # @test C_iio_scan_block_get_info(scan_block, UInt32(0)) != C_NULL;
 
-                # C_iio_scan_block_destroy
-                @test C_iio_scan_block_destroy(scan_block) === nothing;
-            end
-        end
-
-    end
+                # # C_iio_scan_block_destroy
+                # @test C_iio_scan_block_destroy(scan_block) === nothing;
+            # end
+        # end
+    # end
 
 
 end
