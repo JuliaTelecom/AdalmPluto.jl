@@ -9,13 +9,13 @@ using AdalmPluto;
     include("test_device.jl");
     include("test_channel.jl");
     include("test_buffer.jl");
-    #  include("test_debug.jl");
+    # #  include("test_debug.jl");
 end
 
 @testset "AdalmPluto" begin
     #  openPluto
     #  openPluto (txCfg::ChannelCfg, …)
-    global pluto = openPluto(Int64(96e6), Int64(2.8e6), 64; bufferSize=UInt64(1024), bandwidth=Int(25e6));
+    global pluto = openPluto(Int64(960e6), Int64(2.8e6), 64; bufferSize=UInt64(1024), bandwidth=Int(25e6));
     # Functions called by openPluto :
     #   - updateGain! (pluto::PlutoSDR, …)
     #   - updateGainMode! (pluto::PlutoSDR, …)
@@ -39,12 +39,12 @@ end
     @test pluto.tx.cfg.rfport       == "A";
     @test pluto.tx.cfg.bandwidth    == 25000000;
     @test pluto.tx.cfg.samplingRate == Int64(2.8e6);
-    @test pluto.tx.cfg.carrierFreq  == Int64(96e6);
+    @test pluto.tx.cfg.carrierFreq  == Int64(960e6);
     ## PlutoSDR.PlutoRx.ChannelCfg
     @test pluto.rx.cfg.rfport       == "A_BALANCED";
     @test pluto.rx.cfg.bandwidth    == 25000000;
     @test pluto.rx.cfg.samplingRate == Int64(2.8e6);
-    @test pluto.rx.cfg.carrierFreq  == Int64(96e6);
+    @test pluto.rx.cfg.carrierFreq  == Int64(960e6);
 
     ## PlutoSDR.PlutoTx.IIO_Buffer
     @test pluto.tx.buf.C_ptr         != C_NULL;
@@ -85,12 +85,12 @@ end
     @test isapprox(pluto.rx.effectiveSamplingRate, pluto.rx.cfg.samplingRate; atol=5);
 
     #  updateCarrierFreq! (pluto::PlutoSDR, …)
-    @test updateCarrierFreq!(pluto, Int64(105.5e6); doLog=false) == 0;
+    @test updateCarrierFreq!(pluto, Int64(1050.5e6); doLog=false) == 0;
     # Tx
-    @test pluto.tx.cfg.carrierFreq == Int64(105.5e6);
+    @test pluto.tx.cfg.carrierFreq == Int64(1050.5e6);
     @test isapprox(pluto.tx.effectiveCarrierFreq, pluto.tx.cfg.carrierFreq; atol=5);
     # Rx
-    @test pluto.rx.cfg.carrierFreq == Int64(105.5e6);
+    @test pluto.rx.cfg.carrierFreq == Int64(1050.5e6);
     @test isapprox(pluto.rx.effectiveCarrierFreq, pluto.rx.cfg.carrierFreq; atol=5);
 
     sig = zeros(ComplexF32, 3000);
@@ -99,6 +99,16 @@ end
     @test recv!(sig, pluto) == length(sig);
     @test sig[1] != 0 && sig[end] != 0; # very unlikely to have those equal 0
     @test pluto.rx.buf.nb_samples == 3072 - length(sig);
+
+    # Testing gain
+    gain = getGain(pluto)
+    @test gain == 64
+
+    # Send 
+    buffer = zeros(Complex{Float32},1024)
+    send(pluto,buffer)
+    
+
 
     #  Base.close (pluto::PlutoSDR, …)
     close(pluto);
