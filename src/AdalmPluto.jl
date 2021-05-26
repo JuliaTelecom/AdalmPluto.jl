@@ -923,7 +923,7 @@ end
  send(pluto,buffer;repeat=false)
 Send the buffer `buffer` with the Pluto device. If flag is set to true, repeat the transmission indefinively. If use_internal_buffer is set to true, the buffer used is the one already stored in the Pluto device (it saves buffer re-alloc)
 """
-function send(pluto::PlutoSDR,buffer;flag=false,use_internal_buffer=false)
+function send(pluto::PlutoSDR,buffer,flag=false;use_internal_buffer=false)
     # We need to populate the internal buffer of the Pluto 
     # As AD9361 takes 14 bits, we should somehow convert the input stream to Int, then <<2 to have MSB aligned, and write to the Pluto Tx buffer 
     # From external buffer, populate internal Pluto buffer
