@@ -1,7 +1,7 @@
 name = "AdalmPluto"
 uuid = "af34ca7c-e544-47d5-a6fe-72495f08728e"
 authors = ["Pierre Dénès <pdenes@enssat.fr> and contributors"]
-version = "0.2.0"
+version = "0.2.1"
 
 [deps]
 Pkg = "44cfe95a-1eb2-52ea-b672-e2afdf69b78f"

@@ -1,7 +1,7 @@
 [libIIO]
 arch = "x86_64"
-git-tree-sha1 ="690dbf097e3b2bc8213a8c3a199e94b46b1a1b10"
+git-tree-sha1 ="8e1a737eb135f0365a6ce6ea94eb381848028c17"
 
     [[libIIO.download]]
     url = "https://github.com/JuliaTelecom/Artifact_libIIO/releases/download/v0.1/libIIO.tar.gz" 
-    sha256 ="4900fbe0d85810e7676007c0a6756c8668c77714c649210cf90bb687e1815edf"
+    sha256 ="598f77df9707a227a1af2e5cdb4cfcaad233d3a5530ea518953f72b661ccba28"
