@@ -33,7 +33,7 @@ using AdalmPluto;
         # C_iio_context_get_description
         @test C_iio_context_get_description(context) != "";
         # C_iio_context_get_version
-        @test C_iio_context_get_version(context) == (0, 0, 17, "v0.17  ");
+        @test (C_iio_context_get_version(context) == (0, 0, 17, "v0.17  ") ||    C_iio_context_get_version(context) == (0, 0, 18, "v0.18  ")); 
     end
 
 
@@ -68,9 +68,11 @@ using AdalmPluto;
             flag2 = C_iio_context_get_attr(context, UInt32(0)) ==  (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9363A)") 
             @test flag1 || flag2
             # C_iio_context_get_attr_value
+
+            @show C_iio_context_get_attr_value(context, "hw_model")
             flag1 =  C_iio_context_get_attr_value(context, "hw_model") ==   (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9364)") 
-            flag1 =  C_iio_context_get_attr_value(context, "hw_model") ==   (0, "hw_model", "Analog Devices PlutoSDR Rev.B (Z7010-AD9363A)") 
-            @test flag1 || flag2
+            flag3 =  C_iio_context_get_attr_value(context, "hw_model") ==   ("Analog Devices PlutoSDR Rev.B (Z7010-AD9364)") 
+            @test flag1 || flag2 || flag3
         end
 
     end
