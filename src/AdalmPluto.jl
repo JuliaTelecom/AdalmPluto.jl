@@ -936,8 +936,10 @@ function send(pluto::PlutoSDR,buffer,flag=false;use_internal_buffer=false)
     end
     cnt = 0
     while true 
-        C_iio_buffer_push_partial(pluto.tx.buf.C_ptr,N)
-        cnt += N 
+        # C_iio_buffer_push(pluto.tx.buf.C_ptr)
+        tmp = C_iio_buffer_push_partial(pluto.tx.buf.C_ptr,N)
+        # tmp = C_iio_buffer_push(pluto.tx.buf.C_ptr)
+        cnt += tmp 
         (flag == false) && break 
     end
     return cnt
@@ -952,8 +954,9 @@ function populateBuffer!(pluto,buffer::Vector)
     pluto.tx.buf.nb_samples = N
     @assert N < 1024 * 1024 "Transmitted buffer is too large (should be < 1024 * 1024)"
     # Recast pointer... 
-    ptr = Ptr{Int16}(pluto.tx.buf.C_first)
+    cPos = pluto.tx.buf.C_first
     for n ∈ 1 : N
+        ptr = Ptr{Int16}(cPos)
         # Input is ]-1;1[ ==> Convert to Int 
         # << 2 to be compliant with Q14 of AD 
         tmpI = Int16( round(real(buffer[n]) * 1 << 15)) << 2 
@@ -962,12 +965,10 @@ function populateBuffer!(pluto,buffer::Vector)
         # @Tx side we can directly play with pluto.tx.buff.C_first. Position is stored in ptr, and we navigate with the step from IIO_Buffer
         unsafe_store!(ptr,tmpI,1)
         unsafe_store!(ptr,tmpQ,2)
-        ptr += pluto.tx.buf.C_step # As we write I and Q but C_step contains 2 words
+        cPos += pluto.tx.buf.C_step # As we write I and Q but C_step contains 2 words
     end
     return UInt(N)
 end
-
-
 
 
 # This function is significantly slower than the one above despite using less arrays and doing stuff manually.
