@@ -680,7 +680,7 @@ function updateGain!(pluto::PlutoSDR, value::Int64)
     end
     ret = C_iio_channel_attr_write_longlong(pluto.rx.iio.chn, "hardwaregain", value);
     if ret < 0
-        @warnPluto :RX "Could not set hardwaregain to $value (Error $ret):\n" * C_iio_strerror(ret);
+        @warnPluto :RX "Could not set hardwaregain to $value (Error $ret):\n" * C_iio_strerror(Int64(ret));
     end
     return ret;
 end
