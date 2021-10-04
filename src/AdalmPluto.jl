@@ -238,6 +238,7 @@ function scan(backend::String, deviceIndex=1, doPrint=true)
     return uri;
 end
 
+
 """
     createContext(uri)
 
@@ -491,7 +492,7 @@ Creates a PlutoSDR struct and configures the radio to stream the samples.
 
 # Keywords
 - `addr::String="auto"` : the radio address (ex: "usb:1.3.5"). "auto" takes the first uri found for the given backend.
-- `backend::String="usb"` : the backend to scan for the auto uri.
+- `backend::Union{nothing,String}` : the backend to scan for the auto uri. If not specified, all backend are scan and the first radio found is used.
 - `bufferSize::UInt=1024*1024` : the buffer size in samples.
 - `bandwidth::Int` : the bandwidth for both tx and rx.
 
@@ -500,7 +501,7 @@ Creates a PlutoSDR struct and configures the radio to stream the samples.
 """
 function openPluto(
     carrierFreq::Int, samplingRate::Int, gain::Int, antenna="A;A_BALANCED";
-    addr::String="auto", backend::String="usb", bufferSize::UInt=UInt64(1024*1024), bandwidth::Int=Int(20e6)
+    addr::String="auto", backend=nothing, bufferSize::UInt=UInt64(1024*1024), bandwidth::Int=Int(20e6)
 )
     antenna = split(antenna, ";");
     if !(length(antenna) == 2)
@@ -527,19 +528,27 @@ Creates a PlutoSDR struct and configures the radio to stream the samples.
 - `rxCfg::ChannelCfg` : the port / bandwidth / sampling rate / carrier frequency for the rx channels.
 - `bufferSize::UInt=1024*1024` : the buffer size in samples.
 - `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
-- `backend::String="usb"` : the backend to scan for the auto uri.
+- `backend::Union{nothing,String}` : the backend to scan for the auto uri. If not specified, all backend are scan and the first radio found is used.
 
 # Returns
 - `radio::PlutoSDR` : a fully initialized PlutoSDR structure.
 """
-function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend="usb")
+function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64(1024*1024), uri="auto", backend=nothing)
+    # --- Address is not specified, we try to auto-discover the device
     if uri == "auto"
-        uri = scan(backend);
-        if uri == ""
-            error("Unable to auto-detect the Pluto uri using $backend backend");
+        # We do not specify the backend, let's try all
+        isnothing(backend) ?  allBackend= ["usb","local","ip","xml"] : allBackend = [backend]
+        for b ∈ allBackend 
+            curr_uri = scan(b);
+            if !isempty(curr_uri)
+                # Found a device, stop 
+                uri = curr_uri
+                break 
+            end
         end
     end
-
+    # With auto, we scan and we update uri if we found something. If it is sill uri, we do not have found any radio connected, so stop.
+    @assert uri!="auto" "Unable to find any connected device, abort"
     context = createContext(uri);
     # printing stuff
     description = C_iio_context_get_description(context);
