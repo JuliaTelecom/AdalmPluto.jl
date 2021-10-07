@@ -492,7 +492,7 @@ Creates a PlutoSDR struct and configures the radio to stream the samples.
 
 # Keywords
 - `addr::String="auto"` : the radio address (ex: "usb:1.3.5"). "auto" takes the first uri found for the given backend.
-- `backend::Union{nothing,String}` : the backend to scan for the auto uri. If not specified, all backend are scan and the first radio found is used.
+- `backend::Union{nothing,String}` : the backend to scan for the auto uri. If not specified, all backend are scanned and the first radio found is used.
 - `bufferSize::UInt=1024*1024` : the buffer size in samples.
 - `bandwidth::Int` : the bandwidth for both tx and rx.
 
@@ -528,8 +528,7 @@ Creates a PlutoSDR struct and configures the radio to stream the samples.
 - `rxCfg::ChannelCfg` : the port / bandwidth / sampling rate / carrier frequency for the rx channels.
 - `bufferSize::UInt=1024*1024` : the buffer size in samples.
 - `uri::String="auto"` : the radio uri (ex : "usb:1.3.5"). "auto" takes the first uri found for the given backend.
-- `backend::Union{nothing,String}` : the backend to scan for the auto uri. If not specified, all backend are scan and the first radio found is used.
-
+- `backend::Union{nothing,String}` : the backend to scan for the auto uri. If not specified, all backend are scanned and the first radio found is used.
 # Returns
 - `radio::PlutoSDR` : a fully initialized PlutoSDR structure.
 """
@@ -547,7 +546,7 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
             end
         end
     end
-    # With auto, we scan and we update uri if we found something. If it is sill uri, we do not have found any radio connected, so stop.
+    # If uri is init to auto, we scan and we update uri if we found something. If uri is still auto, we do not have found any radio connected, so stop.
     @assert uri!="auto" "Unable to find any connected device, abort"
     context = createContext(uri);
     # printing stuff
@@ -940,7 +939,7 @@ function send(pluto::PlutoSDR,buffer,flag=false;use_internal_buffer=false)
         # --- Transfer buffer in iternal IIO_Buffer
         N = populateBuffer!(pluto,buffer)
     else 
-        # We will use previsouly transfered buffer, but need the size
+        # We will use previously transfered buffer, but need the size
         N = pluto.tx.buf.nb_samples
     end
     cnt = 0
