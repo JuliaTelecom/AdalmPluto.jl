@@ -72,3 +72,30 @@ macro warnPluto(TRX, str)
         end
     end
 end
+ 
+""" 
+Returns the list of the available backends in Pluto, as a Vector of Strings 
+str = getBackends()
+    str = ["usb";"ip";"xml"]
+"""
+function getBackends()
+    # We do not have directly the backend names, but we can get the count, and then iterate to get the names
+    nbBackend = C_iio_get_backends_count() 
+    str = String[] 
+    for n ∈ 1 : nbBackend
+        # --- Try to get  backend name 
+        s = C_iio_get_backend(UInt32(n-1))
+        # This should not be "" 
+        if !isempty(s)
+            # --- Try to load backend to see if everything is fine 
+            flag = C_iio_has_backend(s)
+            if flag == true
+                # --- Store the backend 
+                push!(str,s)
+            end
+        end
+    end
+    return str 
+end
+
+

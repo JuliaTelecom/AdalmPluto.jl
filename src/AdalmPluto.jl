@@ -32,7 +32,8 @@ export
     updateCarrierFreq!,
     updateSamplingRate!,
     updateBandwidth!,
-    getGain
+    getGain,
+    getBackends
 ;
 
 # constants
@@ -536,7 +537,7 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
     # --- Address is not specified, we try to auto-discover the device
     if uri == "auto"
         # We do not specify the backend, let's try all
-        isnothing(backend) ?  allBackend= ["usb","local","ip","xml"] : allBackend = [backend]
+        isnothing(backend) ?  allBackend= getBackends() : allBackend = [backend]
         for b ∈ allBackend 
             curr_uri = scan(b);
             if !isempty(curr_uri)
