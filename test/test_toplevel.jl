@@ -21,5 +21,5 @@ using AdalmPluto;
     @test C_iio_get_backend(UInt32(666)) == "";
 
     # C_iio_strerror
-    @test C_iio_strerror(1) == "Operation not permitted";
+    @test C_iio_strerror(1) == "Operation not permitted (1)";
 end
