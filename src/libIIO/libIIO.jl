@@ -24,14 +24,26 @@ NO_ASSERT = false;
 function __init__()
     # This workflow is only valid for Linux machines, as there is no rules for MACOS
     if Sys.islinux()
+        # Now the udev_rules is in another function 
         if !isfile("/run/udev/rules.d/90-libiio.rules")
-            println("Could not find the necessary udev rule.\nAdding it to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
+            # print a warning here to be sure it is run 
+            println("On Linux, specific udev-rules should be added with root privilege. Be sure to run AdalmPluto.set_udev_rules() ")
+        end
+    end
+end
+
+function set_udev_rules()
+    if Sys.islinux()
+        if !isfile("/run/udev/rules.d/90-libiio.rules")
+            println("\nAdding the udev rules to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
             rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
             open("/tmp/90-libiio.rules", "w") do f
                 write(f, rule);
             end
             run(`sudo mkdir -p /run/udev/rules.d`);
             run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
+        else 
+            println("Udev rules is already present in /run/rules.d/. Nothing to do")
         end
     end
 end
@@ -60,16 +72,16 @@ export
 # scan exports
 include("scan.jl");
 export
-   C_iio_context_info_get_description,
-   C_iio_context_info_get_uri,
-   C_iio_context_info_list_free,
-   C_iio_create_scan_block,
-   C_iio_create_scan_context,
-   C_iio_scan_block_destroy,
-   C_iio_scan_block_get_info,
-   C_iio_scan_block_scan,
-   C_iio_scan_context_destroy,
-   C_iio_scan_context_get_info_list
+    C_iio_context_info_get_description,
+    C_iio_context_info_get_uri,
+    C_iio_context_info_list_free,
+    C_iio_create_scan_block,
+    C_iio_create_scan_context,
+    C_iio_scan_block_destroy,
+    C_iio_scan_block_get_info,
+    C_iio_scan_block_scan,
+    C_iio_scan_context_destroy,
+    C_iio_scan_context_get_info_list
 ;
 
 # toplevel exports
@@ -103,52 +115,52 @@ export
     C_iio_create_local_context,
     C_iio_create_network_context,
     C_iio_create_xml_context,
-    C_iio_create_xml_context_mem
-;
+        C_iio_create_xml_context_mem
+    ;
 
-# device exports
-include("device.jl");
-export
-    C_iio_device_attr_read,
-    C_iio_device_attr_read_all,             # PLACEHOLDER : function pointer needed
-    C_iio_device_attr_read_bool,
-    C_iio_device_attr_read_double,
-    C_iio_device_attr_read_longlong,
-    C_iio_device_attr_write,
-    C_iio_device_attr_write_all,            # PLACEHOLDER : function pointer needed
-    C_iio_device_attr_write_bool,
-    C_iio_device_attr_write_double,
-    C_iio_device_attr_write_longlong,
-    C_iio_device_attr_write_raw,
-    C_iio_device_buffer_attr_read,
-    C_iio_device_buffer_attr_read_all,      # PLACEHOLDER : function pointer needed
-    C_iio_device_buffer_attr_read_bool,
-    C_iio_device_buffer_attr_read_double,
-    C_iio_device_buffer_attr_read_longlong,
-    C_iio_device_buffer_attr_write,
-    C_iio_device_buffer_attr_write_all,     # PLACEHOLDER : function pointer needed
-    C_iio_device_buffer_attr_write_bool,
-    C_iio_device_buffer_attr_write_double,
-    C_iio_device_buffer_attr_write_longlong,
-    C_iio_device_buffer_attr_write_raw,
-    C_iio_device_find_attr,
-    C_iio_device_find_buffer_attr,
-    C_iio_device_find_channel,
-    C_iio_device_get_attr,
-    C_iio_device_get_attrs_count,
-    C_iio_device_get_buffer_attr,
-    C_iio_device_get_buffer_attrs_count,
-    C_iio_device_get_channel,
-    C_iio_device_get_channels_count,
-    C_iio_device_get_context,
-    C_iio_device_get_data,
-    C_iio_device_get_id,
-    C_iio_device_get_name,
-    C_iio_device_get_trigger,
-    C_iio_device_is_trigger,
-    C_iio_device_set_data,
-    C_iio_device_set_kernel_buffers_count,
-    C_iio_device_set_trigger
+    # device exports
+    include("device.jl");
+    export
+        C_iio_device_attr_read,
+        C_iio_device_attr_read_all,             # PLACEHOLDER : function pointer needed
+        C_iio_device_attr_read_bool,
+        C_iio_device_attr_read_double,
+        C_iio_device_attr_read_longlong,
+        C_iio_device_attr_write,
+        C_iio_device_attr_write_all,            # PLACEHOLDER : function pointer needed
+        C_iio_device_attr_write_bool,
+        C_iio_device_attr_write_double,
+        C_iio_device_attr_write_longlong,
+        C_iio_device_attr_write_raw,
+        C_iio_device_buffer_attr_read,
+        C_iio_device_buffer_attr_read_all,      # PLACEHOLDER : function pointer needed
+        C_iio_device_buffer_attr_read_bool,
+        C_iio_device_buffer_attr_read_double,
+        C_iio_device_buffer_attr_read_longlong,
+        C_iio_device_buffer_attr_write,
+        C_iio_device_buffer_attr_write_all,     # PLACEHOLDER : function pointer needed
+        C_iio_device_buffer_attr_write_bool,
+        C_iio_device_buffer_attr_write_double,
+        C_iio_device_buffer_attr_write_longlong,
+        C_iio_device_buffer_attr_write_raw,
+        C_iio_device_find_attr,
+        C_iio_device_find_buffer_attr,
+        C_iio_device_find_channel,
+        C_iio_device_get_attr,
+        C_iio_device_get_attrs_count,
+        C_iio_device_get_buffer_attr,
+        C_iio_device_get_buffer_attrs_count,
+        C_iio_device_get_channel,
+        C_iio_device_get_channels_count,
+        C_iio_device_get_context,
+        C_iio_device_get_data,
+        C_iio_device_get_id,
+        C_iio_device_get_name,
+        C_iio_device_get_trigger,
+        C_iio_device_is_trigger,
+        C_iio_device_set_data,
+        C_iio_device_set_kernel_buffers_count,
+        C_iio_device_set_trigger
 ;
 
 # channel exports
