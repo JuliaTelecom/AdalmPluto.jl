@@ -1,5 +1,7 @@
 module libIIO_jl
 
+using Preferences
+using Libdl
 # Regarding type convertions :
 #   - Basic types as arguments need to be passed as the corresponding Julia type to the wrapper function.
 #   - Basic types as return values keep the Ctype alias and are not converted to "native" Julia type.
@@ -7,11 +9,38 @@ module libIIO_jl
 # This is done to keep the maximum transparency as to what the C function needs, does, and returns
 # When the C function needs a pointer, a reference to a native Julia type is used.
 
-using Pkg.Artifacts;
 
-# init globals and lib path
-const libIIO_rootpath = artifact"libIIO";
-const libIIO = joinpath(libIIO_rootpath, "libIIO/libiio.so");
+""" 
+Change libIIO Ldriver provider. Support "yggdrasil" to use shipped jll file or "local" to use custom installed library
+set_provider("yggdrasil")
+or 
+set_provider("local")
+"""
+# We export here to be sure it is seen @AdalmPluto level
+function set_provider(new_provider::String)
+    if !(new_provider in ("yggdrasil", "local"))
+        throw(ArgumentError("Invalid provider: \"$(new_provider)\""))
+    end
+    # Set it in our runtime values, as well as saving it to disk
+    @set_preferences!("provider" => new_provider)
+    @info("New provider set; restart your Julia session for this change to take effect!")
+end
+function get_provider()
+    return @load_preference("provider","yggdrasil")
+end
+const libiio_provider = get_provider()
+@static  if libiio_provider == "yggdrasil"
+    # --- Using Yggdrasil jll file 
+    using libiio_jll
+    const libIIO = libiio_jll.libiio
+end
+@static if libiio_provider == "local"
+    # --- Using local install, assuming it works
+    libIIO_system_h = dlopen("libiio", false);
+    const libIIO = dlpath(libIIO_system_h)
+end
+
+
 # needed for libIIO functions
 const BUF_SIZE = 2^12; # same value as iio_common.h
 const C_INT_MAX = 2^31 - 1;

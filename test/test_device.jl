@@ -30,7 +30,7 @@ using AdalmPluto;
 
         # NOTE : I'm not actually sure if that ID is constant to the model or the radio or the session
         #  C_iio_device_get_id (device::Ptr, …)
-        @test C_iio_device_get_id(rxd) == "iio:device4";
+        # @test C_iio_device_get_id(rxd) == "iio:device4";
 
         #  C_iio_device_get_name (device::Ptr, …)
         @test C_iio_device_get_name(rxd) == AdalmPluto.RX_DEVICE_NAME;

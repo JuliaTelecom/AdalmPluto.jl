@@ -149,8 +149,6 @@ using AdalmPluto;
             sleep(1)
             @test (C_iio_channel_attr_write_longlong(rxc, "rf_bandwidth", 4000000)[1] == 0)
 
-           # @show C_iio_channel_attr_write_longlong(rxc, "rf_bandwidth", 4000000)
-           @show (C_iio_channel_attr_read_longlong(rxc, "rf_bandwidth") );
             # put back the original value
             C_iio_channel_attr_write_longlong(rxc, "rf_bandwidth", saved_value);
         end

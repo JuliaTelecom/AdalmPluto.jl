@@ -36,6 +36,14 @@ export
     getBackends
 ;
 
+
+# Preferences importation to change libIIO origin 
+# We do not export set_provider and get_provider 
+# To change the lib origin, type 
+# AdalmPluto.set_provider("local")
+set_provider = libIIO_jl.set_provider
+get_provider = libIIO_jl.get_provider
+
 # constants
 const TX_DEVICE_NAME  = "cf-ad9361-dds-core-lpc";
 const RX_DEVICE_NAME  = "cf-ad9361-lpc";
