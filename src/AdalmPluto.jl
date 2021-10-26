@@ -555,8 +555,11 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
             end
         end
     end
-    # If uri is init to auto, we scan and we update uri if we found something. If uri is still auto, we do not have found any radio connected, so stop.
-    @assert uri!="auto" "Unable to find any connected device, abort"
+    if uri == "auto"
+        # If uri is init to auto, we scan and we update uri if we found something. If uri is still auto, we do not have found any radio connected, so try with default address
+        @warn "Unable to auto-detect the Pluto device, try with default address ip:192.168.2.1. To force a given different address use addr=\"192.168.X.X\" in openPluto"
+        uri = "ip:192.168.2.1"
+    end
     context = createContext(uri);
     # printing stuff
     description = C_iio_context_get_description(context);
