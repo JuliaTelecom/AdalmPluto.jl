@@ -56,7 +56,7 @@ function __init__()
     # This workflow is only valid for Linux machines, as there is no rules for MACOS
     if Sys.islinux()
         # Now the udev_rules is in another function 
-        if !isfile("/run/udev/rules.d/90-libiio.rules")
+        if !isfile("/run/udev/rules.d/53-adi-plutosdr-usb.rules")
             # print a warning here to be sure it is run when local provider is used 
             if get_provider() == "default" || get_provider() == "yggdrasil"
                 println("On Linux with Yggdrasil, specific udev-rules should be added with root privilege. Be sure to run AdalmPluto.set_udev_rules() ")
