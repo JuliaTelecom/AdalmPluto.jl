@@ -33,6 +33,8 @@ const libiio_provider = get_provider()
     # --- Using Yggdrasil jll file 
     using libiio_jll
     const libIIO = libiio_jll.libiio
+    # --- Defning rootpath 
+    const libIIO_rootpath = libiio_jll.artifact_dir
 end
 @static if libiio_provider == "local"
     # --- Using local install, assuming it works
@@ -55,24 +57,30 @@ function __init__()
     if Sys.islinux()
         # Now the udev_rules is in another function 
         if !isfile("/run/udev/rules.d/90-libiio.rules")
-            # print a warning here to be sure it is run 
-            println("On Linux, specific udev-rules should be added with root privilege. Be sure to run AdalmPluto.set_udev_rules() ")
+            # print a warning here to be sure it is run when local provider is used 
+            if get_provider() == "default" || get_provider() == "yggdrasil"
+                println("On Linux with Yggdrasil, specific udev-rules should be added with root privilege. Be sure to run AdalmPluto.set_udev_rules() ")
+            end
         end
     end
 end
 
 function set_udev_rules()
     if Sys.islinux()
-        if !isfile("/run/udev/rules.d/90-libiio.rules")
-            println("\nAdding the udev rules to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
-            rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
-            open("/tmp/90-libiio.rules", "w") do f
-                write(f, rule);
+        if get_provider() == "default" || get_provider() == "yggdrasil"
+            if !isfile("/run/udev/rules.d/90-libiio.rules")
+                println("\nAdding the udev rules to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
+                rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
+                open("/tmp/90-libiio.rules", "w") do f
+                    write(f, rule);
+                end
+                run(`sudo mkdir -p /run/udev/rules.d`);
+                run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
+            else 
+                println("Udev rules is already present in /run/rules.d/. Nothing to do")
             end
-            run(`sudo mkdir -p /run/udev/rules.d`);
-            run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
         else 
-            println("Udev rules is already present in /run/rules.d/. Nothing to do")
+            println("Local libiio lib is used, so Libiio documentation to set the udev rules (should be done when intalling the lib")
         end
     end
 end
