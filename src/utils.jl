@@ -98,4 +98,5 @@ function getBackends()
     return str 
 end
 
-
+# Export udev rules
+set_udev_rules = libIIO_jl.set_udev_rules
