@@ -68,17 +68,17 @@ end
 function set_udev_rules()
     if Sys.islinux()
         if get_provider() == "default" || get_provider() == "yggdrasil"
-            if !isfile("/run/udev/rules.d/90-libiio.rules")
+            # if !isfile("/run/udev/rules.d/90-libiio.rules")
                 println("\nAdding the udev rules to /run/udev/rules.d/90-libiio.rules.\nDirectory is write protected, password prompt does not come from Julia");
-                rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/tests/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
+                rule = """SUBSYSTEM=="usb", PROGRAM=="/bin/sh -c '$libIIO_rootpath/bin/iio_info -S usb | grep -oE [[:alnum:]]{4}:[[:alnum:]]{4}'", RESULT!="", MODE="666"\n""";
                 open("/tmp/90-libiio.rules", "w") do f
                     write(f, rule);
                 end
                 run(`sudo mkdir -p /run/udev/rules.d`);
                 run(`sudo cp /tmp/90-libiio.rules /run/udev/rules.d/90-libiio.rules`);
-            else 
-                println("Udev rules is already present in /run/rules.d/. Nothing to do")
-            end
+            # else 
+                # println("Udev rules is already present in /run/rules.d/. Nothing to do")
+            # end
         else 
             println("Local libiio lib is used, so Libiio documentation to set the udev rules (should be done when intalling the lib")
         end
