@@ -51,12 +51,13 @@ NO_ASSERT = false;
 
 # adds a udev rule needed for usb devices
 # should be a volatile rule and will need to be added each boot
+# --> Pain in the ass, we put that in the /etc/udev/rules.d folder
 # but it makes it possible to delete the artifact without leftovers
 function __init__()
     # This workflow is only valid for Linux machines, as there is no rules for MACOS
     if Sys.islinux()
         # Now the udev_rules is in another function 
-        if !isfile("/run/udev/rules.d/53-adi-plutosdr-usb.rules")
+        if !isfile("/etc/udev/rules.d/53-adi-plutosdr-usb.rules")
             # print a warning here to be sure it is run when local provider is used 
             if get_provider() == "default" || get_provider() == "yggdrasil"
                 println("On Linux with Yggdrasil, specific udev-rules should be added with root privilege. Be sure to run AdalmPluto.set_udev_rules() ")
@@ -82,8 +83,8 @@ function set_udev_rules()
             open("/tmp/53-adi-plutosdr-usb.rules", "w") do f
                 write(f, rule);
                 end
-                run(`sudo mkdir -p /run/udev/rules.d`);
-                run(`sudo cp /tmp/53-adi-plutosdr-usb.rules /run/udev/rules.d/53-adi-plutosdr-usb.rules`);
+                # run(`sudo mkdir -p /run/udev/rules.d`);
+                run(`sudo cp /tmp/53-adi-plutosdr-usb.rules /etc/udev/rules.d/53-adi-plutosdr-usb.rules`);
             # else 
                 # println("Udev rules is already present in /run/rules.d/. Nothing to do")
             # end
