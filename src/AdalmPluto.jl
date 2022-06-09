@@ -213,11 +213,11 @@ Returns a device URI.
 - `doPrint::Bool=true` : toggles console printing of the uri.
 
 # Returns
-- `uri::String` : the device URI.
+- `uri::Vector{String}` : A vector of devices URI.
 
 [C equivalent](https://analogdevicesinc.github.io/libiio/master/libiio/iio-monitor_8c-example.html#_a15)
 """
-function scan(backend::String, deviceIndex=1, doPrint=true)
+function scan(backend::String, deviceIndex=-1, doPrint=true)
     # Check if backend is available and create scan context
     C_iio_has_backend(backend) || error("Specified backend $backend is not available");
     scan_context = C_iio_create_scan_context(backend);
@@ -226,24 +226,33 @@ function scan(backend::String, deviceIndex=1, doPrint=true)
     info = Ref{Ptr{Ptr{iio_context_info}}}(0);
     ret = C_iio_scan_context_get_info_list(scan_context, info);
 
+
     # Get usb address
-    uri = "";
+    uri = Vector{String}(undef,0)
     if ret < 0
         C_iio_context_info_list_free(info[]);
         C_iio_scan_context_destroy(scan_context);
         error("iio_scan_context_get_info_list failed with error $ret :\n", C_iio_strerror(ret));
+        uri = [""]
     elseif ret == 0
         (doPrint) && (@info "No $backend device found");
+        uri = [""]
     else
+        if deviceIndex == -1
+            rangeDevice = 1 : ret 
+        else
+            rangeDevice = deviceIndex
+        end
+        for deviceIndex in rangeDevice
         loaded_info = unsafe_load(info[], deviceIndex);
         description = C_iio_context_info_get_description(loaded_info);
-        uri = C_iio_context_info_get_uri(loaded_info);
-        (doPrint) && (@info "Found $ret device(s) with $backend backend.\nSelected $description [$uri]");
+            currUri = C_iio_context_info_get_uri(loaded_info);
+            (doPrint) && (@info "Found $ret device(s) with $backend backend.\nSelected $description [$currUri]");
+            push!(uri,currUri)
     end
-
+    end
     C_iio_context_info_list_free(info[]);
     C_iio_scan_context_destroy(scan_context);
-
     return uri;
 end
 
@@ -550,7 +559,7 @@ function openPluto(txCfg::ChannelCfg, rxCfg::ChannelCfg, bufferSize::UInt=UInt64
             curr_uri = scan(b);
             if !isempty(curr_uri)
                 # Found a device, stop 
-                uri = curr_uri
+                uri = curr_uri[1]
                 break 
             end
         end
