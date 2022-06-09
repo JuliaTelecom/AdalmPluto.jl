@@ -151,7 +151,7 @@ Read the content of the given channel-specific attribute.
 [libIIO documentation](https://analogdevicesinc.github.io/libiio/master/libiio/group__Channel.html#ga116c61892bf3d20ff07efd642c5dfbe1)
 """
 function C_iio_channel_attr_read_longlong(channel::Ptr{iio_channel}, attr::String)
-    value = Ref{Int64}(0);
+    value = Ref{Clonglong}(0);
     ret = ccall(
         (:iio_channel_attr_read_longlong, libIIO),
         Cint, (Ptr{iio_channel}, Cstring, Ptr{Clonglong}),
