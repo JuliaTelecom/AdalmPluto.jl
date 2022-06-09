@@ -15,8 +15,9 @@ using AdalmPluto;
     @test_skip C_iio_create_network_context("127.0.0.1") != C_NULL;
 
     try
-        global uri = AdalmPluto.scan("usb", 1, false);
+        global uri = AdalmPluto.scan("usb", 1, false)[1];
     catch
+        println(exception)
         @error "Could not get a valid uri, skipping the remaining tests"; return;
     end
 

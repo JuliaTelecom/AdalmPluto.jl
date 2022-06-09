@@ -6,7 +6,7 @@ using AdalmPluto;
     toggleNoAssertions(true);
 
     try
-        global uri = AdalmPluto.scan("usb", 1, false);
+        global uri = AdalmPluto.scan("usb", 1, false)[1];
         global ctx = AdalmPluto.createContext(uri);
         global txd,rxd = AdalmPluto.findTRXDevices(ctx);
         global phy = C_iio_context_find_device(ctx, AdalmPluto.PHY_DEVICE_NAME);

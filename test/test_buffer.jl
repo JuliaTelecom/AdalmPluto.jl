@@ -6,7 +6,7 @@ using AdalmPluto;
     toggleNoAssertions(true);
 
     try
-        global uri          = AdalmPluto.scan("usb", 1, false);
+        global uri          = AdalmPluto.scan("usb", 1, false)[1];
         global ctx          = AdalmPluto.createContext(uri);
         global tx, rx       = AdalmPluto.findTRXDevices(ctx);
         global txc, rxc     = AdalmPluto.findTRXChannels(ctx);

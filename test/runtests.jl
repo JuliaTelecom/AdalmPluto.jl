@@ -15,7 +15,8 @@ end
 @testset "AdalmPluto" begin
     #  openPluto
     #  openPluto (txCfg::ChannelCfg, …)
-    global pluto = openPluto(Int64(960e6), Int64(2.8e6), 64; bufferSize=UInt64(1024), bandwidth=Int(25e6));
+    uri = AdalmPluto.scan("usb")[1]
+    global pluto = openPluto(Int64(960e6), Int64(2.8e6), 64; bufferSize=UInt64(1024), bandwidth=Int(25e6),addr=uri);
     # Functions called by openPluto :
     #   - updateGain! (pluto::PlutoSDR, …)
     #   - updateGainMode! (pluto::PlutoSDR, …)
