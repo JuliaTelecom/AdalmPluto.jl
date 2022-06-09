@@ -989,16 +989,20 @@ function populateBuffer!(pluto,buffer::Vector)
     # Recast pointer... 
     cPos = pluto.tx.buf.C_first
     for n ∈ 1 : N
-        ptr = Ptr{Int16}(cPos)
+        ptr = Ptr{Int32}(cPos)
         # Input is ]-1;1[ ==> Convert to Int 
         # << 2 to be compliant with Q14 of AD 
-        tmpI = Int16( round(real(buffer[n]) * 1 << 15)) << 2 
-        tmpQ = Int16( round(imag(buffer[n]) * 1 << 15)) << 2 
+        tmpI = Int16( round(real(buffer[n]) * (1 << 15))) >> 2 
+        tmpQ = Int16( round(imag(buffer[n]) * (1 << 15))) >> 2 
         # We need to populate Pluto buffer
+        # Q word and then I word
+        tmp::Int32 = Int32(tmpQ) << 16  + tmpI
         # @Tx side we can directly play with pluto.tx.buff.C_first. Position is stored in ptr, and we navigate with the step from IIO_Buffer
-        unsafe_store!(ptr,tmpI,1)
-        unsafe_store!(ptr,tmpQ,2)
+        # unsafe_store!(ptr,tmpI,1)
+        # unsafe_store!(ptr,tmpQ,2)
+        unsafe_store!(ptr,tmp)
         cPos += pluto.tx.buf.C_step # As we write I and Q but C_step contains 2 words
+        global PTR = ptr
     end
     return UInt(N)
 end
