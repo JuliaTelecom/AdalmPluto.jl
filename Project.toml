@@ -1,7 +1,7 @@
 name = "AdalmPluto"
 uuid = "af34ca7c-e544-47d5-a6fe-72495f08728e"
 authors = ["Pierre Dénès <pdenes@enssat.fr> and Robin Gerzaguet <robin.gerzaguet@irisa.fr>"]
-version = "0.2.3"
+version = "0.3.0"
 
 [deps]
 Libdl = "8f399da3-3557-5675-b5ff-fb832c97cbdb"
