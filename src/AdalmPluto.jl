@@ -227,6 +227,10 @@ function scan(backend::String, deviceIndex=-1, doPrint=true)
     ret = C_iio_scan_context_get_info_list(scan_context, info);
 
 
+    # Get info list returns an error, shortcut 
+    (ret < 0) && (return [""])
+
+
     # Get usb address
     uri = Vector{String}(undef,0)
     if ret < 0
