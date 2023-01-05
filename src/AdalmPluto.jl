@@ -236,7 +236,8 @@ function scan(backend::String, deviceIndex=-1, doPrint=true)
     if ret < 0
         C_iio_context_info_list_free(info[]);
         C_iio_scan_context_destroy(scan_context);
-        error("iio_scan_context_get_info_list failed with error $ret :\n", C_iio_strerror(ret));
+        #error("iio_scan_context_get_info_list failed with error $ret :\n", C_iio_strerror(ret));
+        @warn "[$backend Backend] iio_scan_context_get_info_list failed with error $(C_iio_strerror(ret))"
         uri = [""]
     elseif ret == 0
         (doPrint) && (@info "No $backend device found");
