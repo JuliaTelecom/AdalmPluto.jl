@@ -931,8 +931,8 @@ function refillJuliaBufferRX(pluto::PlutoSDR)
     # find the appropriate types and their max values for normalization
     bytes_per_value = pluto.rx.buf.C_step ÷ 2;
     utype, type, utype_norm, type_norm = nbytesToType(bytes_per_value);
-
-    pluto.rx.buf.samples = reinterpret(Complex{type}, [pluto.rx.buf.i_raw_samples pluto.rx.buf.q_raw_samples]'[:]) / Float32(type_norm);
+    #pluto.rx.buf.samples = reinterpret(Complex{type}, [pluto.rx.buf.i_raw_samples pluto.rx.buf.q_raw_samples]'[:]) / Float32(type_norm);
+    pluto.rx.buf.samples =(reinterpret(type,(pluto.rx.buf.i_raw_samples)) + 1im*reinterpret(type,pluto.rx.buf.q_raw_samples)) ./ Float32(type_norm);
     pluto.rx.buf.nb_samples = (nbytes_i + nbytes_q) ÷ pluto.rx.buf.C_step;
 
     return pluto.rx.buf.nb_samples;
